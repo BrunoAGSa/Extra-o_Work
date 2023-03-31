@@ -1,0 +1,3 @@
+id	filename	md5	size	state
+ddb16b8d-9ad8-4c66-a986-513d3507b26d	ddb16b8d-9ad8-4c66-a986-513d3507b26d/1076483a-e462-47e5-a47a-ca9544548dff.rna_seq.augmented_star_gene_counts.tsv	1f159d2ad25728410b32a5f38050fa1a	4249454	validated
+\N	ddb16b8d-9ad8-4c66-a986-513d3507b26d/annotations.txt	f9fcbff82142e5ecea9d013fb0536a10	260	\N
