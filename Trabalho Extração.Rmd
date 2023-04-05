@@ -16,7 +16,9 @@ output: html_document
 
 clinical_clinical = read.delim("~/Documentos/GitHub/Extra-o_Work/clinical.project-TCGA-GBM.2023-03-31/clinical.tsv", header=TRUE)
 clinical_exposure = read.delim("~/Documentos/GitHub/Extra-o_Work/clinical.project-TCGA-GBM.2023-03-31/exposure.tsv", header=TRUE)
+clinical_clinical
 ```
+
 
 #2.2 Import dos Dados Project
 
@@ -60,7 +62,7 @@ treatment_unique_colums(project_clinical)
 treatment_unique_colums(project_portion)
 treatment_unique_colums(project_slide)
 
-
+clinical_clinical
 ```
 # tentativa dna seq tirar dados
 
@@ -77,13 +79,14 @@ query = GDCquery(project = "TCGA-GBM", data.category = "Transcriptome Profiling"
 output = getResults(query)
 
 GDCdownload(query)
-```
+  ```
 
 ```{r}
 
-data = GDCprepare(query, summarizedExperiment = TRUE)
+data = GDCprepare(query)
+data
 
-data_mat = assay(data, "unstranded" )
+data_mat = assay(data)
 data_mat
 
 ```

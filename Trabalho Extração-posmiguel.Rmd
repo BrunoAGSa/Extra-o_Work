@@ -1,0 +1,104 @@
+---
+title: "Trabalho Extração"
+author: "Joana Gonçalves, Bruno Sá, Gonçalo Cardoso, Luís Ferreira"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Import das Librarys
+
+```{r}
+
+library(TCGAbiolinks)
+library(SummarizedExperiment)
+library(DESeq2)
+
+```
+
+
+
+# Recolha dos dados
+
+
+### Expressão/Metadados
+```{r}
+
+projects = getGDCprojects()
+projects$id
+
+proj = "TCGA-GBM"     
+query = GDCquery(
+  project = proj,
+  data.category = "Transcriptome Profiling", 
+  data.type = "Gene Expression Quantification",
+  workflow.type = "STAR - Counts"
+  )
+
+GDCdownload(query)
+data_rna_GBM= GDCprepare(query)
+
+```
+
+### Dados clinicos
+```{r}
+
+query_clin = GDCquery(project = "TCGA-GBM", 
+                  data.category = "Clinical",
+                  data.type = "Clinical Supplement", 
+                  data.format = "BCR Biotab")
+
+GDCdownload(query_clin)
+clinical.GBM = GDCprepare(query_clin)
+
+
+```
+
+# Sumarização dos Dados
+```{r}
+
+class(data_rna_GBM)
+dim(data_rna_GBM)
+
+data_rna_GBM$paper_BCR
+data_rna_GBM$paper_Gender
+data_rna_GBM$paper_Grade
+data_rna_GBM$paper_IDH.status
+
+meta_GBM = colData(data_rna_GBM)
+dim(meta_GBM)
+meta_GBM$patient
+meta_GBM$paper_IDH.status
+
+```
+
+
+
+```{r}
+
+
+data_de = data_rna_GBM[,!is.na(data_rna_GBM$paper_IDH.status)]
+
+ddsSE = DESeqDataSet(data_de, design = ~ paper_IDH.status)
+
+keep = rowSums(counts(ddsSE)) >= 10
+ddsSE = ddsSE[keep,]
+ddsSE = DESeq(ddsSE)
+
+resultsNames(ddsSE)
+
+res = results(ddsSE, name = "paper_IDH.status_WT_vs_Mutant")
+dea = as.data.frame(res)
+summary(res)
+```
+
+```{r}
+## dados clinicos
+
+
+names(clinical.GBM)
+
+head (clinical.GBM$clinical_drug_gbm )
+df = as.data.frame(clinical.GBM$clinical_drug_gbm)
+View(df)
+
+```
+
