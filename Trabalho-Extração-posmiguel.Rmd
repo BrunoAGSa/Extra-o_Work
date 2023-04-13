@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
-## Explicação dos dados, a sua origem e relevância
+## Explicação dos dados, a sua origem e relevância 
 
 O National Cancer Institute (NCI) dos Estados Unidos gere o Genomic Data Commons (GDC), um repositório de dados que fornece acesso a dados genómicos e clínicos de vários projetos de pesquisa sobre vários tipos de cancro , incluindo o TCGA. O GDC fornece uma plataforma para bioinformáticos e clínicos acederem e analisarem os dados do TCGA - GBM juntamente com dados de outros estudos do TCGA e outros projetos.
 
@@ -16,6 +16,10 @@ O objetivo do TCGA - GBM é entender as alterações genéticas e moleculares qu
 As informações para o TCGA-GBM foram coletadas de amostras de tecido tumoral retiradas de pacientes com GBM , juntamente com detalhes clínicos como idade, sexo e tempo de sobrevivência. O estudo utilizou várias técnicas de análise genómica , como sequenciamento de DNA e RNA , para encontrar alterações genéticas , alterações no número de cópias de genes e expressão diferencial de genes.
 
 Os dados do TCGA-GBM são extremamente importantes para a compreensão do glioblastoma multiforme e possibilitarão bioinformáticos e investigadores encontrar novos alvos terapêuticos para o tratamento desse tipo de cancro. Além disso, esses dados poderão ser usados para desenvolver novas terapias, identificar indicadores e melhorar o diagnóstico e tratamento de GBM .
+
+
+
+
 
 # Import das Librarys
 
@@ -28,10 +32,12 @@ library(ggplot2)
 
 ```
 
+
+
 # Recolha dos dados
 
-### Expressão/Metadados
 
+### Expressão/Metadados
 ```{r}
 
 projects = getGDCprojects()
@@ -50,9 +56,7 @@ data_rna_GBM= GDCprepare(query)
 
 ```
 
-
 ### Dados clinicos
-
 ```{r}
 
 query_clin = GDCquery(project = "TCGA-GBM", 
@@ -66,83 +70,35 @@ clinical.GBM = GDCprepare(query_clin)
 
 ```
 
-
-
-
-#teste
-```{r}
-
-data_rna_GBM_assay = assay(data_rna_GBM, "unstranded" )
-
-data_rna_GBM_assay
-
-plot(data_rna_GBM_assay)
-```
-
-
-
-
-# Sumarização
-
-```{r}
-
-
-
-
-```
-
-# Estrutura dos Dados
-
+# Sumarização dos Dados
 ```{r}
 
 class(data_rna_GBM)
 dim(data_rna_GBM)
 
-
-
 data_rna_GBM$paper_BCR
-str(data_rna_GBM$paper_BCR)
-
-
-summary(data_rna_GBM$paper_BCR)
-
 data_rna_GBM$paper_Gender
-data_rna_GBM$paper_Gender
-data_rna_GBM$paper_Gender
-data_rna_GBM$paper_Gender
-
 data_rna_GBM$paper_Grade
-data_rna_GBM$paper_Grade
-data_rna_GBM$paper_Grade
-data_rna_GBM$paper_Grade
-
 data_rna_GBM$paper_IDH.status
-data_rna_GBM$paper_IDH.status
-data_rna_GBM$paper_IDH.status
-data_rna_GBM$paper_IDH.status
-
 
 meta_GBM = colData(data_rna_GBM)
 dim(meta_GBM)
 meta_GBM$patient
 meta_GBM$paper_IDH.status
 
-
-
 ```
 
 # DE - Diferencal Expression . IDH.staus
 
+
+
 ```{r}
-
-```{r}
-
-
 data_rna_GBM$paper_IDH.status
 
 qplot(data_rna_GBM$paper_IDH.status) + ggtitle("Escrever dps") 
-
+      
 ```
+
 
 ```{r}
 
@@ -163,8 +119,8 @@ summary(res)
 DESeq2::plotMA(res, ylim = c(-6,6))
 
 ```
-
 # DE - Diferencal Expression - Genero
+
 
 ```{r}
 data_rna_GBM$paper_Gender
@@ -172,6 +128,7 @@ data_rna_GBM$paper_Gender
 ggplot2::qplot(data_rna_GBM$paper_Gender)
 
 ```
+
 
 ```{r}
 data_de = data_rna_GBM[,!is.na(data_rna_GBM$paper_Gender)]
@@ -190,19 +147,15 @@ summary(res)
 DESeq2::plotMA(res, ylim = c(-7,7))
 
 ```
-
 # DE - Estatistica descritiva Subtype
 
 ```{r}
 data_rna_GBM$paper_Original.Subtype
 
-a = as.factor(data_rna_GBM$paper_Original.Subtype)
-
 qplot(data_rna_GBM$paper_Original.Subtype)
 
-
-
 ```
+
 
 ```{r}
 data_de = data_rna_GBM[,!is.na(data_rna_GBM$paper_Original.Subtype)]
@@ -218,26 +171,25 @@ resultsNames(ddsSE)
 res = results(ddsSE, name = "paper_Original.Subtype_G.CIMP_vs_Classical")
 dea = as.data.frame(res)
 summary(res)
-a = DESeq2::plotMA(res, ylim = c(-7,7))
+DESeq2::plotMA(res, ylim = c(-7,7))
 
 res = results(ddsSE, name = "paper_Original.Subtype_Mesenchymal_vs_Classical")
 dea = as.data.frame(res)
 summary(res)
-b = DESeq2::plotMA(res, ylim = c(-7,7))
+DESeq2::plotMA(res, ylim = c(-7,7))
 
 res = results(ddsSE, name = "paper_Original.Subtype_Neural_vs_Classical")
 dea = as.data.frame(res)
 summary(res)
-c = DESeq2::plotMA(res, ylim = c(-7,7))
+DESeq2::plotMA(res, ylim = c(-7,7))
 
 res = results(ddsSE, name = "paper_Original.Subtype_Proneural_vs_Classical")
 dea = as.data.frame(res)
 summary(res)
-d = DESeq2::plotMA(res, ylim = c(-7,7))
-
-
+DESeq2::plotMA(res, ylim = c(-7,7))
 
 ```
+
 
 ```{r}
 ## dados clinicos
@@ -250,3 +202,4 @@ df = as.data.frame(clinical.GBM$clinical_drug_gbm)
 View(df)
 
 ```
+
