@@ -76,12 +76,9 @@ library(ggplot2)
 
 # Recolha dos dados
 
-### Expressão/Metadados
+### Importação dados de Expressão/Metadados
 
 ```{r}
-
-projects = getGDCprojects()
-projects$id
 
 proj = "TCGA-GBM"     
 query = GDCquery(
@@ -92,39 +89,14 @@ query = GDCquery(
   )
 
 
-query <- GDCquery(project = "TCGA-GBM", 
-                  legacy = TRUE,
-                  data.category = "Gene expression", 
-                  data.type = "Gene expression quantification",
-                  platform = "Illumina HiSeq",
-                  file.type = "normalized_results", 
-                  experimental.strategy = "RNA-Seq")
-
-
-
-
 GDCdownload(query)
 
 data_rna_GBM= GDCprepare(query)
-
-data_teste = GDCprepare(query, summarizedExperiment = FALSE)
-
-
-
-```
-# testes asbasaskjha
-```{r}
-
-
-data_teste
-
-
+data_rna_GBM
 
 ```
 
-
-
-### Dados clinicos
+### Importação dados dos Dados clinicos
 
 ```{r}
 
@@ -134,9 +106,8 @@ query_clin = GDCquery(project = "TCGA-GBM",
                   data.format = "BCR Biotab")
 
 GDCdownload(query_clin)
+
 clinical.GBM = GDCprepare(query_clin)
-
-
 ```
 
 
@@ -155,7 +126,7 @@ plot(data_rna_GBM_assay)
 
 
 
-# Sumarização
+# Sumarização   ------------------ estrutura
 
 ```{r}
 
@@ -165,51 +136,172 @@ data_rna_GBM
 ```
 
 # Estrutura dos Dados
+Foram as selecionadas as colunas que correspondem aos metadados que consideramos mais pertinentes:
+
+meta_GBM$race --> Representa a raça de cada paciente (white, black or african american).
+
+meta_GBM$age_at_diagnosis --> Representa a idade, em dias, que o paciente foi diagnosticado.
+
+meta_GBM$gender --> Representa o género dos pacientes (male, female).
+
+meta_GBM$paper_Grade --> Representa o grau de malignidade do tumor (G4)
+
+meta_GBM$paper_IDH.status --> Representa o estado do gene isocitrato desidrogenase (IDH) nas amostras (WT, Mutant)
+
+meta_GBM$patient --> Representa o ID do Paciente 
+
+meta_GBM$definition --> Representa o tipo de amostra de tecido recolhida (Primary solid Tumor, Recurrent Solid Tumor, Solid Tissue Normal)
+
+meta_GBM$paper_Mutation.Count -->  Representa o número de mutações identificadas no genoma do paciente.
+
+meta_GBM$vital_status -->  Dados que indicam se o paciente está vivo ou morto no momento da coleta de dados.
+
 
 ```{r}
 
-class(data_rna_GBM)
-dim(data_rna_GBM)
-
-
-
-data_rna_GBM$paper_BCR
-str(data_rna_GBM$paper_BCR)
-
-
-summary(data_rna_GBM$paper_BCR)
-
-data_rna_GBM$paper_Gender
-data_rna_GBM$paper_Gender
-data_rna_GBM$paper_Gender
-data_rna_GBM$paper_Gender
-
-data_rna_GBM$paper_Grade
-data_rna_GBM$paper_Grade
-data_rna_GBM$paper_Grade
-data_rna_GBM$paper_Grade
-
-data_rna_GBM$paper_IDH.status
-data_rna_GBM$paper_IDH.status
-data_rna_GBM$paper_IDH.status
-data_rna_GBM$paper_IDH.status
-
-
 meta_GBM = colData(data_rna_GBM)
+
 dim(meta_GBM)
-meta_GBM$patient
-meta_GBM$paper_IDH.status
+
+meta_GBM
+
+colnames(meta_GBM)
+race = meta_GBM$race
+age_diag = meta_GBM$age_at_diagnosis
+gender = meta_GBM$gender
+p_grade = meta_GBM$paper_Grade
+p_IDH = meta_GBM$paper_IDH.status
+patient = meta_GBM$patient
+tissue = meta_GBM$definition
+mutation = meta_GBM$paper_Mutation.Count 
+vital_st = meta_GBM$vital_status   
 
 
 
 ```
 
+### Análise Exploratõria Variáveis --> race 
+
+```{r}
+
+
+qplot(race)
+pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+    
+```
+
+### Análise Exploratõria Variáveis --> age_diag 
+
+```{r}
+qplot(race)
+pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+```
+
+### Análise Exploratõria Variáveis --> gender 
+
+```{r}
+qplot(race)
+pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+```
+
+### Análise Exploratõria Variáveis --> p_grade 
+
+```{r}
+qplot(race)
+pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+```
+
+### Análise Exploratõria Variáveis --> p_IDH 
+
+```{r}
+qplot(race)
+pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+```
+
+### Análise Exploratõria Variáveis --> patient 
+
+```{r}
+qplot(race)
+pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+```
+
+### Análise Exploratõria Variáveis --> tissue 
+
+```{r}
+qplot(race)
+pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+```
+
+### Análise Exploratõria Variáveis --> mutation 
+
+```{r}
+qplot(race)
+pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+
+```
+
+### Análise Exploratõria Variáveis --> vital_st 
+
+```{r}
+qplot(race)
+pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+```
+
+
+
+```{r}
+
+data_rna_GBM$paper_BCR
+
+str(data_rna_GBM$paper_BCR)
+
+summary(data_rna_GBM$paper_BCR)
+
+qplot(data_rna_GBM$paper_BCR)
+
+```
+
+
+```{r}
+data_rna_GBM$paper_Gender
+data_rna_GBM$paper_Gender
+data_rna_GBM$paper_Gender
+data_rna_GBM$paper_Gender
+```
+
+```{r}
+data_rna_GBM$paper_Grade
+data_rna_GBM$paper_Grade
+data_rna_GBM$paper_Grade
+data_rna_GBM$paper_Grade
+```
+
+```{r}
+data_rna_GBM$paper_IDH.status
+data_rna_GBM$paper_IDH.status
+data_rna_GBM$paper_IDH.status
+data_rna_GBM$paper_IDH.status
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # DE - Diferencal Expression . IDH.staus
 
 ```{r}
-
-```{r}
-
 
 data_rna_GBM$paper_IDH.status
 
@@ -261,6 +353,13 @@ res = results(ddsSE, name = "paper_Gender_male_vs_female")
 dea = as.data.frame(res)
 summary(res)
 DESeq2::plotMA(res, ylim = c(-7,7))
+
+
+topgene = rownames(res)[which.min(res$padj)]
+
+plotCounts(ddsSE, gene = topgene, intgroup = c("paper_Gender"))
+
+
 
 ```
 
@@ -317,21 +416,9 @@ d = DESeq2::plotMA(res, ylim = c(-7,7))
 
 
 names(clinical.GBM)
-
 head (clinical.GBM$clinical_drug_gbm )
 df = as.data.frame(clinical.GBM$clinical_drug_gbm)
 View(df)
 
-```
-
-
-
-#testes mt testado
-
-```{r}
-
-library(GDCRNATools)
-
 
 ```
-
