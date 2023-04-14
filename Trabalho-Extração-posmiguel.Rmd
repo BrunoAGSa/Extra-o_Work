@@ -116,14 +116,14 @@ clinical.GBM = GDCprepare(query_clin)
 #teste
 ```{r}
 
-data_rna_GBM_assay = assay(data_rna_GBM, "unstranded" )
+data_rna_GBM_assay = assay(data_rna_GBM, "unstranded" ) 
 
 data_rna_GBM_assay
 
 plot(data_rna_GBM_assay)
 sum(is.na(data_rna_GBM_assay)) #Após uma análise do dataset data_rna_GBM_assay, verificamos que não há presença de valores omissos (NA).
 
-data_rna_GBM_assay_scale = scale(data_rna_GBM_assay)
+data_rna_GBM_assay_scale = scale(data_rna_GBM_assay)   # Standardização
 data_rna_GBM_assay_scale
 
 #segunda parte do trabalho
@@ -136,16 +136,26 @@ data_rna_GBM_assay_scale
 
 
 
-# Sumarização   ------------------ estrutura
+# Estrutura dos dados : Análise dos metadados
+
+```{r}
+data_rna_GBM
+```
+
+#Dimensão e classe do objeto (data_rna_GBM)
 
 ```{r}
 
-
-data_rna_GBM
+dim(data_rna_GBM)
+class(data_rna_GBM)
 
 ```
 
-# Estrutura dos Dados
+A partir desta análise percebemos que o data_rna_GBM tem  60660 linhas (que correspondem a genes) e 175 colunas (que correspondem a amostras) para além disso, é um objeto da classe RangedSummarizedExperiment, que faz parte do pacote SummarizedExperiment.
+
+
+
+
 Foram as selecionadas as colunas que correspondem aos metadados que consideramos mais pertinentes:
 
 meta_GBM$race --> Representa a raça de cada paciente (white, black or african american).
@@ -169,13 +179,14 @@ meta_GBM$vital_status -->  Dados que indicam se o paciente está vivo ou morto n
 
 ```{r}
 
-meta_GBM = colData(data_rna_GBM)
+meta_GBM =colData(data_rna_GBM)
 
-dim(meta_GBM)
+dim(meta_GBM)  # a tabela contém 175 linhas (amostras) e 107 colunas (informações sobre as amostras)
 
 meta_GBM
 
 colnames(meta_GBM)
+
 race = as.factor(meta_GBM$race)
 age_diag = meta_GBM$age_at_diagnosis
 gender = as.factor(meta_GBM$gender)
@@ -201,7 +212,7 @@ pie(table(race) ,col = c("darkslategray1", "coral", "darkolivegreen1", "navajowh
 ### Análise Exploratõria Variáveis --> age_diag 
 
 ```{r}
-hist(age_diag, col = c("darkgrey"))
+hist(age_diag, col = c("lightblue"))
 qplot(age_diag)
  
 ```
@@ -210,7 +221,7 @@ qplot(age_diag)
 
 ```{r}
 qplot(gender)
-pie(table(gender), col = c("blue", "pink"))
+pie(table(gender), col = c("pink", "lightblue"))
 ```
 
 ### Análise Exploratõria Variáveis --> p_grade (nao faz sentido) 
@@ -223,7 +234,7 @@ qplot(p_grade)
 
 ```{r}
 qplot(p_IDH)
-pie(table(p_IDH), col = c("orange", "gold"))
+pie(table(p_IDH), col = c("lightgreen", "pink"))
 ```
 
 ### Análise Exploratõria Variáveis --> patient 
@@ -235,21 +246,23 @@ qplot(patient)  #existem casos em que varios pacientes tem o mesmo id
 ### Análise Exploratõria Variáveis --> tissue 
 
 ```{r}
-qplot(tissue)
+qplot(tissue, fill = "navajowhite")
+
+
 ```
 
 ### Análise Exploratõria Variáveis --> mutation 
 
 ```{r}
-hist(mutation)
+hist(mutation, col = "darkolivegreen1")
 boxplot(mutation)
 ```
 
 ### Análise Exploratõria Variáveis --> vital_st 
 
 ```{r}
-qplot(vital_st)
-pie(table(vital_st), col = terrain.colors(4))
+qplot(vital_st, fill= "darkolivegreen1")
+pie(table(vital_st), col = terrain.colors(3))
 ```
 
 # DE - Diferencal Expression . IDH.staus
@@ -258,7 +271,7 @@ pie(table(vital_st), col = terrain.colors(4))
 
 data_rna_GBM$paper_IDH.status
 
-qplot(data_rna_GBM$paper_IDH.status) + ggtitle("Escrever dps") 
+qplot(data_rna_GBM$paper_IDH.status, fill="navajowhite") + ggtitle("Escrever dps") 
 
 ```
 
