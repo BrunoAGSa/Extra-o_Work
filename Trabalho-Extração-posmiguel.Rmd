@@ -186,118 +186,63 @@ vital_st = meta_GBM$vital_status
 
 
 qplot(race)
-pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+pie(table(race) ,col = c("darkslategray1", "coral", "darkolivegreen1", "navajowhite"))
     
 ```
 
 ### Análise Exploratõria Variáveis --> age_diag 
 
 ```{r}
-qplot(race)
-pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+hist(age_diag, col = c("darkgrey"))
+qplot(age_diag)
+ 
 ```
 
 ### Análise Exploratõria Variáveis --> gender 
 
 ```{r}
-qplot(race)
-pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+qplot(gender)
+pie(table(gender), col = c("blue", "pink"))
 ```
 
-### Análise Exploratõria Variáveis --> p_grade 
+### Análise Exploratõria Variáveis --> p_grade (nao faz sentido) 
 
 ```{r}
-qplot(race)
-pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+qplot(p_grade)
 ```
 
 ### Análise Exploratõria Variáveis --> p_IDH 
 
 ```{r}
-qplot(race)
-pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+qplot(p_IDH)
+pie(table(p_IDH), col = c("orange", "gold"))
 ```
 
 ### Análise Exploratõria Variáveis --> patient 
 
 ```{r}
-qplot(race)
-pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+qplot(patient)  #existem casos em que varios pacientes tem o mesmo id
 ```
 
 ### Análise Exploratõria Variáveis --> tissue 
 
 ```{r}
-qplot(race)
-pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+qplot(tissue)
 ```
 
 ### Análise Exploratõria Variáveis --> mutation 
 
 ```{r}
-qplot(race)
-pie(table(race), col = c("steelblue4", "red", "green", "grey"))
-
+hist(mutation)
+boxplot(mutation)
 ```
 
 ### Análise Exploratõria Variáveis --> vital_st 
 
 ```{r}
-qplot(race)
-pie(table(race), col = c("steelblue4", "red", "green", "grey"))
+qplot(vital_st)
+pie(table(vital_st), col = terrain.colors(4))
 ```
-
-
-
-```{r}
-
-data_rna_GBM$paper_BCR
-
-str(data_rna_GBM$paper_BCR)
-
-summary(data_rna_GBM$paper_BCR)
-
-qplot(data_rna_GBM$paper_BCR)
-
-```
-
-
-```{r}
-data_rna_GBM$paper_Gender
-data_rna_GBM$paper_Gender
-data_rna_GBM$paper_Gender
-data_rna_GBM$paper_Gender
-```
-
-```{r}
-data_rna_GBM$paper_Grade
-data_rna_GBM$paper_Grade
-data_rna_GBM$paper_Grade
-data_rna_GBM$paper_Grade
-```
-
-```{r}
-data_rna_GBM$paper_IDH.status
-data_rna_GBM$paper_IDH.status
-data_rna_GBM$paper_IDH.status
-data_rna_GBM$paper_IDH.status
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # DE - Diferencal Expression . IDH.staus
 
