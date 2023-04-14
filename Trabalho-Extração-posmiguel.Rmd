@@ -91,10 +91,37 @@ query = GDCquery(
   workflow.type = "STAR - Counts"
   )
 
+
+query <- GDCquery(project = "TCGA-GBM", 
+                  legacy = TRUE,
+                  data.category = "Gene expression", 
+                  data.type = "Gene expression quantification",
+                  platform = "Illumina HiSeq",
+                  file.type = "normalized_results", 
+                  experimental.strategy = "RNA-Seq")
+
+
+
+
 GDCdownload(query)
+
 data_rna_GBM= GDCprepare(query)
 
+data_teste = GDCprepare(query, summarizedExperiment = FALSE)
+
+
+
 ```
+# testes asbasaskjha
+```{r}
+
+
+data_teste
+
+
+
+```
+
 
 
 ### Dados clinicos
@@ -133,7 +160,7 @@ plot(data_rna_GBM_assay)
 ```{r}
 
 
-
+data_rna_GBM
 
 ```
 
@@ -296,3 +323,15 @@ df = as.data.frame(clinical.GBM$clinical_drug_gbm)
 View(df)
 
 ```
+
+
+
+#testes mt testado
+
+```{r}
+
+library(GDCRNATools)
+
+
+```
+
