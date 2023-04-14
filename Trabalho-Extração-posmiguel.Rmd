@@ -121,6 +121,16 @@ data_rna_GBM_assay = assay(data_rna_GBM, "unstranded" )
 data_rna_GBM_assay
 
 plot(data_rna_GBM_assay)
+sum(is.na(data_rna_GBM_assay)) #Após uma análise do dataset data_rna_GBM_assay, verificamos que não há presença de valores omissos (NA).
+
+data_rna_GBM_assay_scale = scale(data_rna_GBM_assay)
+data_rna_GBM_assay_scale
+
+#segunda parte do trabalho
+#library("factoextra")
+#pca_result <- prcomp(data_rna_GBM_assay_scale, scale = TRUE)
+#pca_data <- as.data.frame(pca_result$x)
+#pca_data
 ```
 
 
@@ -166,17 +176,15 @@ dim(meta_GBM)
 meta_GBM
 
 colnames(meta_GBM)
-race = meta_GBM$race
+race = as.factor(meta_GBM$race)
 age_diag = meta_GBM$age_at_diagnosis
-gender = meta_GBM$gender
+gender = as.factor(meta_GBM$gender)
 p_grade = meta_GBM$paper_Grade
 p_IDH = meta_GBM$paper_IDH.status
 patient = meta_GBM$patient
-tissue = meta_GBM$definition
+tissue = as.factor(meta_GBM$definition)
 mutation = meta_GBM$paper_Mutation.Count 
-vital_st = meta_GBM$vital_status   
-
-
+vital_st = as.factor(meta_GBM$vital_status) 
 
 ```
 
