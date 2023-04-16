@@ -91,8 +91,8 @@ query = GDCquery(
 
 GDCdownload(query)
 
-data_rna_GBM= GDCprepare(query)
-data_rna_GBM
+gbm= GDCprepare(query)
+gbm
 
 ```
 
@@ -110,47 +110,27 @@ GDCdownload(query_clin)
 clinical.GBM = GDCprepare(query_clin)
 ```
 
-#teste
+
+
+
+# Estrutura dos dados : Vizualização do dataset
+
+
+**Visualização dos objetos da class RangedSummarizedExperiment** 
 
 ```{r}
-
-assayNames(data_rna_GBM)
-
-data_rna_GBM_assay = assay(data_rna_GBM, "unstranded" ) #escolha da assay
-
-data_rna_GBM_assay
-
-plot(data_rna_GBM_assay)
-
-sum(is.na(data_rna_GBM_assay)) #Após uma análise do dataset data_rna_GBM_assay, verificamos que não há presença de valores omissos (NA).
-
-data_rna_GBM_assay_scale = scale(data_rna_GBM_assay)   # Standardização
-data_rna_GBM_assay_scale
-
-#segunda parte do trabalho
-#library("factoextra")
-#pca_result <- prcomp(data_rna_GBM_assay_scale, scale = TRUE)
-#pca_data <- as.data.frame(pca_result$x)
-#pca_data
+gbm
 ```
 
-# Estrutura dos dados : Análise dos metadados
-
-```{r}
-gbm=data_rna_GBM
-```
-
-
+**Visualização dos dados presentes na assay**
 
 ```{r}
 assayNames(gbm)
 ```
 
 
-```{r}
-data_rna_GBM_assay = assay(gbm, "unstranded" )  #escolha da assay
 
-```
+**Vizualização dos 5 primeiros e 5 últimos genes**
 
 ```{r}
 rowRanges(gbm)
@@ -158,21 +138,49 @@ rowRanges(gbm)
 ```
 
 
-```{r}
-plot(data_rna_GBM_assay)
-```
+
+**Dimensão e Classe do Objeto**
 
 ```{r}
-boxplot(data_rna_GBM_assay, main="Gene expression distribution", col=1:175)
+dim(gbm) 
+
+class(gbm)
+
 ```
+
+A partir desta análise percebemos que o data_rna_GBM tem 60660 linhas (que correspondem a genes) e 175 colunas (que correspondem a amostras) para além disso, é um objeto da classe RangedSummarizedExperiment, que faz parte do pacote SummarizedExperiment. 
+
+
+
+**Visualização dos dados de expressão**
+
+```{r}
+
+gbm_assay = assay(gbm, "unstranded" )  #escolha da assay
+
+```
+
+
+
+
+
+
+
+
+```{r}
+plot(gbm_assay)
+```
+
+
+
 
 #Dimensão e classe do objeto (data_rna_GBM)
 
 ```{r}
 
-dim(data_rna_GBM_assay)
+dim(gbm_assay)
 
-class(data_rna_GBM_assay)
+class(gbm_assay)
 
 
 
@@ -182,9 +190,9 @@ A partir desta análise percebemos que o data_rna_GBM tem 60660 linhas (que corr
 
 
 ```{r}
-sum(is.na(data_rna_GBM_assay)) #Após uma análise do dataset data_rna_GBM_assay, verificamos que não há presença de valores omissos (NA).
+sum(is.na(gbm_assay)) #Após uma análise do dataset data_rna_GBM_assay, verificamos que não há presença de valores omissos (NA).
 
-data_rna_GBM_assay_scale = scale(data_rna_GBM_assay)   # Standardização
+gbm_assay_scale = scale(gbm_assay)   # Standardização
 data_rna_GBM_assay_scale
 
 
@@ -196,6 +204,7 @@ Esta standardização dos dados vai premitir que todos os valores de expressão 
 
 
 
+##
 
 
 Foram as selecionadas as colunas que correspondem aos metadados que consideramos mais pertinentes:
@@ -224,25 +233,12 @@ meta_GBM\$vital_status --\> Dados que indicam se o paciente está vivo ou morto 
 ## Matrizes counts
 
 ```{r}
-countdata <- round(assays(data_rna_GBM)[["unstranded"]])
+countdata <- round(assays(gbm)[["unstranded"]])
+
 countdata
 ```
-```{r}
 
 
-gbm$race = as.factor(gbm$race)
-gbm$age_diag=gbm$age_at_diagnosis
-gbm$gender=as.factor(gbm$gender)
-gbm$p_grade=gbm$paper_Grade
-gbm$p_IDH = gbm$paper_IDH.status
-gbm$patient = gbm$patient
-gbm$tissue = as.factor(gbm$definition)
-gbm$mutation = gbm$paper_Mutation.Count 
-gbm$vital_st= as.factor(gbm$vital_status)
-
- 
-
-```
 
 
 ```{r}
@@ -251,6 +247,7 @@ round( colSums(assay(gbm)) / 1e6, 1 )  #(o segundo argumento de round informa qu
 
 ##Pré-processamento dos dados
 
+
 ###Tratamento de valores omissos
 
 
@@ -258,6 +255,7 @@ round( colSums(assay(gbm)) / 1e6, 1 )  #(o segundo argumento de round informa qu
 ```{r}
 sum(is.na(race))
 ```
+
 ```{r}
 sum(is.na(age_diag))
 ```
@@ -265,12 +263,6 @@ sum(is.na(age_diag))
 ```{r}
 sum(is.na(gender))
 ```
-
-data_de = data_rna_GBM[,!is.na(data_rna_GBM$paper_IDH.status)]
-data_de = data_rna_GBM[,!is.na(data_rna_GBM$paper_IDH.status)]
-data_de = data_rna_GBM[,!is.na(data_rna_GBM$paper_IDH.status)]
-data_de = data_rna_GBM[,!is.na(data_rna_GBM$paper_IDH.status)]
-data_de = data_rna_GBM[,!is.na(data_rna_GBM$paper_IDH.status)]
 
 ```{r}
 sum(is.na(p_grade))
@@ -300,69 +292,28 @@ sum(is.na(mutation))
 sum(is.na(vital_st))
 
 ```
-#Nota tirar NA!!! para fazer comando seguinte
-
-```{r}
-#remover NA das variáveis
-
-
-```
 
 
 
-
-```{r}
-dds <- DESeqDataSet(gbm, design = ~ race + age_diag + gender + p_grade + p_IDH + patient + tissue + mutation + vital_st)
-```
-
-
-
-
-
-
-
-## Meta_GBM (colData) (vOU ADICIONAR A NOVA VERSÃO AQUI PARA NÃO PERDERMOS NADA SE ISTO FALHAR)
-
-
-```{r}
-coldata <- colData(gbm)
-```
-
-construção do objeto DESeqDataSet a partir da matriz de contagens e da tabela de informações de amostra, usamos:
-
-
-```{r}
-ddsMat <- DESeqDataSetFromMatrix(countData = countdata,
-                                 colData = coldata,
-                                 design = ~ race + age_diag + gender + p_grade + p_IDH + patient + tissue + mutation + vital_st)
-
-```
-
-## Análise exploratória e visualização
-
-```{r}
-
-```
-
-
-(....) Não consegui continuar a fazer pq não consigo tirar os NA
 
 
 --------------------
 
 
+
 ## Meta_GBM (colData)
+
 O componente colData armazena informações sobre as colunas da matriz de expressão, como anotações de amostras, características dos indivíduos, tratamentos ou condições experimentais, entre outros metadados. Por isso, para analizarmos as colunas da matriz que indicamos anteriormente vamos ter de chamar este componente.
 
 
 ```{r}
-meta_GBM =colData(gbm)
+meta_gbm = colData(gbm)
 
-dim(meta_GBM)  # a tabela contém 175 linhas (amostras) e 107 colunas (informações sobre as amostras)
+dim(meta_gbm)  # a tabela contém 175 linhas (amostras) e 107 colunas (informações sobre as amostras)
 
-class(meta_GBM) #dataframe
+class(meta_gbm) # dataframe
 
-colnames(meta_GBM) # nomes das colunas
+colnames(meta_gbm) # nomes das colunas
 
 
 
@@ -370,42 +321,97 @@ colnames(meta_GBM) # nomes das colunas
 
 Com esta tabela podemos realizar subconjuntos de colunas, filtrar dados com base em critérios específicos ou simplesmente visualizar informações relevantes sobre as amostras ou condições experimentais.
 
+##Sumário das variáveis
+
+```{r}
+print(dfSummary(meta_gbm, style = 'grid', graph.magnif = 1, valid.col = FALSE,
+                max.distinct.values = 5, col.widths = c(100, 200, 200, 350, 500, 250),
+                dfSummary.silent  = TRUE, headings = FALSE, justify = 'l')
+      , method = 'render', max.tbl.height = 500)
+```
+
+
+
+
+##Descrição das Variáveis presentes nos metadados
+
+
+
+
+
+Através da análise do resumo das variáveis presentes no meta_gbm foram as selecionadas as colunas que correspondem aos metadados que consideramos mais pertinentes, nomeadamente:
+
+**meta_gbm\$race** --\> Representa a raça de cada paciente (white, black or african american).
+
+**meta_gbm\$age_at_diagnosis** --\> Representa a idade, em dias, que o paciente foi diagnosticado.
+
+**meta_gbm\$gender** --\> Representa o género dos pacientes (male, female).
+
+**meta_gbm\$paper_IDH.status** --\> Representa o estado do gene isocitrato desidrogenase (IDH) nas amostras (WT, Mutant)
+
+**meta_gbm\$patient** --\> Representa o ID do Paciente
+
+**meta_gbm\$definition** --\> Representa o tipo de amostra de tecido recolhida (Primary solid Tumor, Recurrent Solid Tumor, Solid Tissue Normal)
+
+**meta_gbm\$paper_Mutation.Count** --\> Representa o número de mutações identificadas no genoma do paciente.
+
+**meta_gbm\$vital_status** --\> Dados que indicam se o paciente está vivo ou morto no momento da coleta de dados.
+
+
+
+**Curadoria**
+
+
+A curadoria manual consistiu em verificar as variáveis identificadas e certificar que estavam nos formatos apropriados para a análise estatística. Durante esse processo, foi identificado que várias variáveis estavam em formato de texto (character), o que impossibilitava a sua utilização em análises estatísticas diretas. Para resolver esse problema, as variáveis foram fatorizadas, ou seja, transformadas em variáveis numéricas que representam cada categoria (ou nível) presente na variável original. Isso permitiu que essas variáveis fossem utilizadas na análise estatística de forma apropriada. Isto permitiu maior qualidade e confiabilidade dos resultados obtidos na análise de dados. 
+
+
+
+
 ```{r}
 
-race = as.factor(meta_GBM$race)
-age_diag = meta_GBM$age_at_diagnosis
-gender = as.factor(meta_GBM$gender)
-p_grade = meta_GBM$paper_Grade
-p_IDH = meta_GBM$paper_IDH.status
-patient = meta_GBM$patient
-tissue = as.factor(meta_GBM$definition)
-mutation = meta_GBM$paper_Mutation.Count 
-vital_st = as.factor(meta_GBM$vital_status) 
+race = as.factor(meta_gbm$race)
+age_diag = meta_gbm$age_at_diagnosis
+gender = as.factor(meta_gbm$gender)
+p_grade = meta_gbm$paper_Grade
+p_IDH = meta_gbm$paper_IDH.status
+patient = meta_gbm$patient
+tissue = as.factor(meta_gbm$definition)
+mutation = meta_gbm$paper_Mutation.Count 
+vital_st = as.factor(meta_gbm$vital_status) 
 
 ```
 
-### Análise Gráfica Exploratõria Variáveis --\> race
+
+
+
+
+
+### Análise/Visualização Gráfica Exploratõria Variáveis --\> race
+
 
 ```{r}
+
 qplot(race,fill=race, main="Race")
 
 
 table=table(race)
 data=as.data.frame(table)
-slices <- data$Freq
-lbls <- data$race
-pct <- round(slices/sum(slices)*100)
-lbls <- paste(lbls, pct) 
-lbls <- paste(lbls,"%",sep="") 
+slices=data$Freq 
+lbls=data$race
+pct=round(slices/sum(slices)*100)
+lbls=paste(lbls, pct) 
+lbls=paste(lbls,"%",sep="") 
 pie(slices,labels = lbls, col = c("darkslategray1", "coral", "darkolivegreen1", "navajowhite"),
    main="Race")
+
 ```
+
 
 ### Análise Exploratõria Variáveis --\> age_diag
 
 ```{r}
 
-hist(age_diag, col = c("lightblue"), main="Idade(em dias) em que o paciente foi diagnosticado", xlab = "Idade quando do diagnóstico (dias)", ylab = "Frequência")
+hist(age_diag, col = c("lightblue"), main= "Idade(em dias) em que o paciente foi diagnosticado", xlab = "Idade quando do diagnóstico (dias)", ylab = "Frequência")
 
  
 ```
@@ -417,20 +423,15 @@ qplot(gender, fill= gender)
 
 table=table(gender)
 data=as.data.frame(table)
-slices <- data$Freq
-lbls <- data$gender
-pct <- round(slices/sum(slices)*100)
-lbls <- paste(lbls, pct) 
-lbls <- paste(lbls,"%",sep="") 
+slices=data$Freq
+lbls=data$gender
+pct=round(slices/sum(slices)*100)
+lbls=paste(lbls, pct) 
+lbls=paste(lbls,"%",sep="") 
 pie(slices,labels = lbls, col = c("pink", "lightblue"), main="Género")
 
 ```
 
-### Análise Exploratõria Variáveis --\> p_grade (nao faz sentido)
-
-```{r}
-qplot(p_grade, fill=p_grade, main="Estágio do Cancro")
-```
 
 ### Análise Exploratõria Variáveis --\> p_IDH
 
@@ -439,11 +440,11 @@ qplot(p_IDH, fill=p_IDH, main="Estado do gene isocitrato desidrogenase (IDH) nas
 
 table=table(p_IDH)
 data=as.data.frame(table)
-slices <- data$Freq
-lbls <- data$p_IDH
-pct <- round(slices/sum(slices)*100)
-lbls <- paste(lbls, pct) 
-lbls <- paste(lbls,"%",sep="") 
+slices=data$Freq
+lbls=data$p_IDH
+pct=round(slices/sum(slices)*100)
+lbls=paste(lbls, pct) 
+lbls=paste(lbls,"%",sep="") 
 pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1"), main="Estado do gene isocitrato desidrogenase (IDH) nas amostras")
 
 ```
@@ -451,11 +452,14 @@ pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1"), main="Estado d
 ### Análise Exploratõria Variáveis --\> patient
 
 ```{r}
-
 qplot(patient) 
+
 ```
 
 Problema: Existem casos em que varios pacientes tem o mesmo ID!
+
+
+
 
 ### Análise Exploratõria Variáveis --\> tissue
 
@@ -467,63 +471,110 @@ qplot(tissue, fill=tissue, main="Representa o tipo de amostra de tecido recolhid
 
 table=table(tissue)
 data=as.data.frame(table)
-slices <- data$Freq
-lbls <- data$tissue
-pct <- round(slices/sum(slices)*100)
-lbls <- paste(lbls, pct) 
-lbls <- paste(lbls,"%",sep="") 
+slices=data$Freq
+lbls=data$tissue
+pct=round(slices/sum(slices)*100)
+lbls=paste(lbls, pct) 
+lbls=paste(lbls,"%",sep="") 
 pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"), main="Representa o tipo de amostra de tecido recolhida")
 
 ```
 
+
+
 ### Análise Exploratória Variáveis --\> mutation
 
 ```{r}
+
 hist(mutation, col = "darkolivegreen1", main = "Número de mutações identificadas no genoma do paciente.")
+
 boxplot(mutation,main = "Número de mutações identificadas no genoma do paciente.", ylab= "Nº de Mutações", col= "darkolivegreen1")
 
 ```
 
+
+
+
+
+
 ### Análise Exploratõria Variáveis --\> vital_st
+
+```{r}
+
+library(ggplot2)
+# Basic density
+p <- ggplot(mutation, aes(x=mutation)) + 
+  geom_density()
+p
+# Add mean line
+p+ geom_vline(aes(xintercept=mean(mutation)),
+            color="blue", linetype="dashed", size=1)
+
+```
+
+##Análise univariada
+
+
+
+
+```{r}
+shapiro.test(age_diag)
+```
+
+```{r}
+shapiro.test(mutation)
+```
+
+
+
+inta
+```{r}
+
+install.packages("summarytools")
+library(summarytools)
+
+dfSummary(meta_gbm)
+```
+
+```{r}
+t.test(mutation)
+```
+```{r}
+t.test(age_diag)
+```
+
+
+
+
 
 ```{r}
 qplot(vital_st, fill= vital_st, main="Estado vital do paciente no momento da coleta de dados")
 
 table=table(vital_st)
 data=as.data.frame(table)
-slices <- data$Freq
-lbls <- data$vital_st
-pct <- round(slices/sum(slices)*100)
-lbls <- paste(lbls, pct) 
-lbls <- paste(lbls,"%",sep="") 
+slices=data$Freq
+lbls=data$vital_st
+pct=round(slices/sum(slices)*100)
+lbls=paste(lbls, pct) 
+lbls=paste(lbls,"%",sep="") 
 pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"), main="Estado vital do paciente no momento da coleta de dados")
 
 ```
+
+
 
 #Análise da Expressão diferencial
 
 A análise de expressão diferencial vai ser realizada usando o pacote DESeq2 do Bioconductor.
 
-## DE - Análise da Espresão Diferencial do. IDH.staus
 
-
+## DE - Análise da Espressão Diferencial do. IDH.staus
 
 
 ```{r}
 
 
-
-data_rna_GBM$paper_IDH.status
-
-
-qplot(data_rna_GBM$paper_IDH.status, fill="navajowhite") + ggtitle("Estado do gene isocitrato desidrogenase (IDH) nas amostras") 
-
-```
-
-```{r}
-
-
-data_de = data_rna_GBM[,!is.na(data_rna_GBM$paper_IDH.status)] #retirar NA
+data_de = gbm[,!is.na(gbm$paper_IDH.status)] #retirar NA
 
 ddsSE = DESeqDataSet(data_de, design = ~ paper_IDH.status)
 
@@ -571,10 +622,17 @@ DESeq2::plotMA(res, ylim = c(-7,7))
 
 topGene = rownames(res)[which.min(res$padj)]
 with(res[topGene, ], {
-  points(baseMean, log2FoldChange, col="dodgerblue", cex=2, lwd=2)
-  text(baseMean, log2FoldChange, topGene, pos=2, col="dodgerblue")
+  points(baseMean, log2FoldChange, col="black", cex=2, lwd=2)
+  text(baseMean, log2FoldChange, topGene, loc=-2, col="black")
 })
 
+```
+**TopGene**
+
+
+```{r}
+topGene = rownames(res)[which.min(res$padj)]
+topGene
 ```
 
 
@@ -591,28 +649,20 @@ hist(res$pvalue[res$baseMean > 1], breaks = 0:20/20,
 
 
 
-## DE - Diferencal Expression - Genero
+## DE - Diferencal Expression - Género
 
 ```{r}
-data_rna_GBM$paper_Gender
-a = as.factor(data_rna_GBM$paper_Gender)
-qplot(data_rna_GBM$paper_Gender, fill=a) + ggtitle("Género dos Pacientes") 
+data_de = gbm[,!is.na(gbm$paper_Gender)]
 
+ddsSE_sex = DESeqDataSet(data_de, design = ~ paper_Gender)
 
-```
+keep = rowSums(counts(ddsSE_sex)) >= 10
+ddsSE_sex = ddsSE_sex[keep,]
+ddsSE_sex = DESeq(ddsSE_sex)
 
-```{r}
-data_de = data_rna_GBM[,!is.na(data_rna_GBM$paper_Gender)]
+resultsNames(ddsSE_sex)
 
-ddsSE = DESeqDataSet(data_de, design = ~ paper_Gender)
-
-keep = rowSums(counts(ddsSE)) >= 10
-ddsSE = ddsSE[keep,]
-ddsSE = DESeq(ddsSE)
-
-resultsNames(ddsSE)
-
-res = results(ddsSE, name = "paper_Gender_male_vs_female")
+res = results(ddsSE_sex, name = "paper_Gender_male_vs_female")
 dea = as.data.frame(res)
 summary(res)
 ```
@@ -703,8 +753,11 @@ qplot(data_rna_GBM$paper_Original.Subtype, fill=a)
 
 ```
 
+
+
+
 ```{r}
-data_de = data_rna_GBM[,!is.na(data_rna_GBM$paper_Original.Subtype)]
+data_de = gbm[,!is.na(gbm$paper_Original.Subtype)]
 
 ddsSE = DESeqDataSet(data_de, design = ~ paper_Original.Subtype)
 
