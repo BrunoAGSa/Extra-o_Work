@@ -551,23 +551,6 @@ boxplot(mutation,main = "Número de mutações identificadas no genoma do pacien
 ```
 
 
-### Análise Exploratõria Variáveis --\> sample_type
-
-```{r}
-qplot(sample_type, fill= sample_type, main="Tipos de Amostra")
-
-table=table(sample_type)
-data=as.data.frame(table)
-slices=data$Freq
-lbls=data$sample_ty
-pct=round(slices/sum(slices)*100)
-lbls=paste(lbls, pct) 
-lbls=paste(lbls,"%",sep="") 
-pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"), main="Tipos de Amostra")
-
-```
-
-
 
 ### Análise Exploratõria Variáveis --\> vital_st
 
@@ -627,7 +610,7 @@ Com base nos resultados do t-teste , não há evidências de que existam diferen
 
 ```{r}
 
-res.aov = aov(meta_gbm$age_diag ~ meta_gbm$gender)
+res.aov = aov(age_diag ~ gender)
 
 summary(res.aov)
 ```
@@ -660,8 +643,9 @@ Este teste é realizado para determinar se a suposição de homogeneidade de var
 
 
 ```{r}
-leveneTest(age_diag ~ tissue)
+leveneTest(age_diag ~ tissue1)
 ```
+
 
 A estatística de teste é 0,0722 e o valor-p é 0.7885, como o p-value > 0,05,  indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais. Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
 
@@ -673,7 +657,7 @@ Hipótese alternativa (H1): Há diferenças significativa entre as médias dos g
 
 
 ```{r}
-t.test(age_diag ~ tissue )
+t.test ( tissue ~ age_diag)
 ```
 
 
@@ -686,7 +670,7 @@ Com base nos resultados do t-teste , não há evidências de que existam diferen
 
 ```{r}
 
-res.aov = aov(age_diag ~ tissue)
+res.aov = aov(age_diag1 ~ tissue)
 
 summary(res.aov)
 ```
@@ -701,7 +685,7 @@ Uma vez que, a estatística F é 1,63 e o valor de prova 0,203,  indica que o ef
 
 
 ```{r}
-boxplot(age_diag ~ tissue, data = meta_gbm, main = "Idade Aquando do Diagnóstico Vs Tipo de Tecido", xlab = "Idade", ylab = "Idade em dias", col = c( "coral", "darkolivegreen1"))
+boxplot(age_diag1 ~ tissue, data = meta_gbm, main = "Idade Aquando do Diagnóstico Vs Tipo de Tecido", xlab = "Idade", ylab = "Idade em dias", col = c( "coral", "darkolivegreen1"))
 
 ```
 
@@ -710,11 +694,117 @@ A análise ANOVA revelou que não existem diferenças significas entre as média
 
 
 
-###Avaliar a relação entre o género e a idade de diagnótico 
+
+
+###Avaliar a relação entre os tipos de tecidos afetados e o tempo entre o diagnóstico e a morte do paciente
+
+Agora vamos verificar se o tipo de tecido afetado tem alguma implicação no tempo de vida do paciente desde o seu diagnóstico, ou seja na sua mortalidade.
+
+
+
+**Teste de Levene**
+
+H0: As variâncias das duas amostras são iguais.
+H1: As variâncias das duas amostras são diferentes.
+
+
+Este teste é realizado para determinar se a suposição de homogeneidade de variância pode ser mantida antes de realizar uma análise de variância (ANOVA) ou teste t-pareado.
+
 
 ```{r}
-ttest(mutation~death)
+leveneTest(death1 ~ tissue)
 ```
+
+
+A estatística de teste é 0.0651 e o valor-p é 0.7991, como o p-value > 0,05,  indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais. Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
+
+
+**t-test**
+
+Hipótese nula (H0): Não há diferença significativa entre as médias dos diferentes tipos de tecidos afetados para a variável death.
+Hipótese alternativa (H1): Há diferenças significativa entre as médias dos diferentes tipos de tecidos afetados para a variável death.
+
+
+```{r}
+t.test (death1 ~ tissue)
+```
+
+
+O resultado do t-teste para duas amostras independentes indica que a estatística t é -0.92933 com um valor de p de 0.3686 Como o p-value > 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag". Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
+
+
+Com base nos resultados do t-teste , não há evidências de que existam diferenças significativas entre as médias dos diferentes tecidos na variável "age_diag".
+
+
+**ANOVA**
+
+```{r}
+
+res.aov = aov(death1 ~ tissue)
+
+summary(res.aov)
+```
+
+
+Uma vez que, a estatística F é 0.705 e o valor de prova 0.402,  indica que o efeito do sexo não é estatisticamente significativo a um nível de significância de 0,05. Com base nos resultados da ANOVA, não há evidências suficientes para sugerir que o tipo tenha um efeito significativo na idade de diagnóstico. 
+
+Concluindo, o tipo de tecido em que o cacro foi originado não tem influência significativa na mortalidade dos pacientes com glioblastoma multiforme.
+
+
+**Análise Gráfica: Boxplot Tipo de Tecido vs Idade de Diagnóstico**
+
+
+```{r}
+boxplot(death1 ~ tissue, data = meta_gbm, main = "Mortalidade Vs Tipo de Tecido", xlab = "Idade", ylab = "Idade em dias", col = c( "coral", "darkolivegreen1"))
+
+```
+
+
+A análise ANOVA revelou que não existem diferenças significas entre as médias dos grupos da variável “tissue” para os valores de “death”, e isso também ficou comprovado pela análise do boxplot associado.
+
+
+###Avaliar a relação entre os tipos de tipos de tecido e o tempo entre o diagnóstico e a morte do paciente
+
+
+```{r}
+
+t_v = table(tissue,vital_st1) # tabela cruzada entre as duas variáveis 
+
+```
+
+
+**Teste Qui-Quadrado**
+
+
+H0:As variáveis são independentes
+H1:As variáveis não são independentes
+
+
+```{r}
+chisq.test(t_v)
+```
+Com base na tabela fornecida e no teste qui-quadrado, podemos concluir que existe uma associação significativa entre o tipo de tecido e o estado vital dos pacientes  p-value<0.05. Comcluindo a distribuição do estado vital(se está vivo ou morto) não é a mesma em diferentes tipos de tecidos, há mais mortalidade no caso se for Primary solid Tumor. Rejeita-se a hipotese nula, as variáveis não são independentes
+
+
+
+###Avaliar a relação entre o género do paciente e o tempo entre o diagnóstico e a morte do paciente
+
+
+
+```{r}
+
+g_v = table(gender1,vital_st1)
+g_v
+
+```
+
+
+```{r}
+chisq.test(g_v)
+```
+O teste qui-quadrado com correção de continuidade não mostrou diferenças significativas entre o género e a vitalidade do paciente (X-squared = 1.277, df = 2, p-value = 0.5281).
+
+Com base na tabela fornecida e no teste qui-quadrado, podemos concluir que existe uma associação significativa entre o tipo de tecido e o estado vital dos pacientes  p-value>0.05. Portanto, não rejeitamos a hipótese nula de que as duas variáveis são independentes.
 
 
 
@@ -789,6 +879,8 @@ with(res[topGene, ], {
 })
 
 ```
+
+
 **TopGene**
 
 
@@ -853,6 +945,7 @@ Subdefinimos a tabela de resultados para esses genes e, em seguida, classificamo
 resSig <- subset(res, padj < 0.1)
 head(resSig[ order(resSig$log2FoldChange), ])
 ```
+
 …e com a regulação positiva mais forte:
 
 
