@@ -12,6 +12,9 @@ output:
       smooth_scroll: true
     number_sections: true
     code_folding: show
+editor_options: 
+  markdown: 
+    wrap: sentence
 ---
 
 \
@@ -47,23 +50,28 @@ div.fontdoc {font-family: georgia;}
 
 ## Explicação dos dados, a sua origem e relevância
 
-O National Cancer Institute (NCI) dos Estados Unidos gere o Genomic Data Commons (GDC), um repositório de dados que fornece acesso a dados genómicos e clínicos de vários projetos de pesquisa sobre vários tipos de cancro , incluindo o TCGA. O GDC fornece uma plataforma para bioinformáticos e clínicos acederem e analisarem os dados do TCGA - GBM juntamente com dados de outros estudos do TCGA e outros projetos.
+O National Cancer Institute (NCI) dos Estados Unidos gere o Genomic Data Commons (GDC), um repositório de dados que fornece acesso a dados genómicos e clínicos de vários projetos de pesquisa sobre vários tipos de cancro , incluindo o TCGA.
+O GDC fornece uma plataforma para bioinformáticos e clínicos acederem e analisarem os dados do TCGA - GBM juntamente com dados de outros estudos do TCGA e outros projetos.
 
-Depois de analisarmos várias hipoteses de estudo para este trabalho decidimos analisar os dados recolhidos no seguinte [ensaio clínico](https://portal.gdc.cancer.gov/projects/TCGA-GBM). O TCGA - GBM é um estudo genómico que faz parte do projeto TCGA (The Cancer Genome Atlas ) e foca-se num tipo agressivo de cancro cerebral conhecido como glioblastoma multiforme (GBM) .
+Depois de analisarmos várias hipoteses de estudo para este trabalho decidimos analisar os dados recolhidos no seguinte [ensaio clínico](https://portal.gdc.cancer.gov/projects/TCGA-GBM).
+O TCGA - GBM é um estudo genómico que faz parte do projeto TCGA (The Cancer Genome Atlas ) e foca-se num tipo agressivo de cancro cerebral conhecido como glioblastoma multiforme (GBM) .
 
 O objetivo do TCGA - GBM é entender as alterações genéticas e moleculares que ocorrem nesse tipo de cancro para desenvolver novas terapias e tratamentos mais eficazes .
 
-As informações para o TCGA-GBM foram coletadas de amostras de tecido tumoral retiradas de pacientes com GBM , juntamente com detalhes clínicos como idade, sexo e tempo de sobrevivência. O estudo utilizou várias técnicas de análise genómica , como sequenciamento de DNA e RNA , para encontrar alterações genéticas , alterações no número de cópias de genes e expressão diferencial de genes.
+As informações para o TCGA-GBM foram coletadas de amostras de tecido tumoral retiradas de pacientes com GBM , juntamente com detalhes clínicos como idade, sexo e tempo de sobrevivência.
+O estudo utilizou várias técnicas de análise genómica , como sequenciamento de DNA e RNA , para encontrar alterações genéticas , alterações no número de cópias de genes e expressão diferencial de genes.
 
-Os dados do TCGA-GBM são extremamente importantes para a compreensão do glioblastoma multiforme e possibilitarão bioinformáticos e investigadores encontrar novos alvos terapêuticos para o tratamento desse tipo de cancro. Além disso, esses dados poderão ser usados para desenvolver novas terapias, identificar indicadores e melhorar o diagnóstico e tratamento de GBM .
-
+Os dados do TCGA-GBM são extremamente importantes para a compreensão do glioblastoma multiforme e possibilitarão bioinformáticos e investigadores encontrar novos alvos terapêuticos para o tratamento desse tipo de cancro.
+Além disso, esses dados poderão ser usados para desenvolver novas terapias, identificar indicadores e melhorar o diagnóstico e tratamento de GBM .
 
 #Instalação de packages
-```{r}
-install.packages("car")
-install.packages("summarytools")
-```
 
+```{r}
+install.packages("car") 
+install.packages("summarytools")
+install.packages("RegEnrich")
+install.packages("Rtools")
+```
 
 # Import das Librarys
 
@@ -82,13 +90,12 @@ library(RColorBrewer)
 library(car)
 library(genefilter)
 library(summarytools)
+library(RegEnrich)
+
 
 ```
 
-
-
 # Recolha dos dados: Importação e Carregamento dados de Expressão/Metadados e Verificação do seu conteúdo e dimensão
-
 
 ### Importação de dados de Expressão/Metadados
 
@@ -110,8 +117,6 @@ gbm
 
 ```
 
-
-
 ### Importação dados dos Dados clinicos
 
 ```{r}
@@ -127,21 +132,13 @@ clinical.GBM = GDCprepare(query_clin)
 clinical.GBM
 ```
 
-
-
-
 ### Vizualização dos dados e Verificação do seu conteúdo e dimensão
 
-
-
-
-**Visualização dos objetos da class RangedSummarizedExperiment** 
+**Visualização dos objetos da class RangedSummarizedExperiment**
 
 ```{r}
 gbm
 ```
-
-
 
 **Visualização dos dados presentes na assay**
 
@@ -149,20 +146,12 @@ gbm
 assayNames(gbm)
 ```
 
-
-
-
-
 **Vizualização dos 5 primeiros e 5 últimos genes**
 
 ```{r}
 rowRanges(gbm)
 
 ```
-
-
-
-
 
 **Dimensão e Classe do Objeto**
 
@@ -173,20 +162,16 @@ class(gbm)
 
 ```
 
-A partir desta análise percebemos que o data_rna_GBM tem 60660 linhas (que correspondem a genes) e 175 colunas (que correspondem a amostras) para além disso, é um objeto da classe RangedSummarizedExperiment, que faz parte do pacote SummarizedExperiment. 
-
-
-
+A partir desta análise percebemos que o data_rna_GBM tem 60660 linhas (que correspondem a genes) e 175 colunas (que correspondem a amostras) para além disso, é um objeto da classe RangedSummarizedExperiment, que faz parte do pacote SummarizedExperiment.
 
 **Visualização dos dados de expressão**
-
 
 ## Matrizes counts
 
 ```{r}
-countdata <- round(assays(gbm)[["unstranded"]])
+gbm_assay <- round(assays(gbm)[["unstranded"]])
 
-countdata
+gbm_assay
 ```
 
 ##Sumarização dos dados
@@ -195,15 +180,11 @@ countdata
 dfSummary(gbm_assay)
 ```
 
-
 ```{r}
-round( colSums(assay(gbm)) / 1e6, 1 )  #(o segundo argumento de round informa quantos pontos decimais devem ser mantidos, ou seja queremos só 1 casa decimal).
+round( colSums(gbm_assay) / 1e6, 1 )  #(o segundo argumento de round informa quantos pontos decimais devem ser mantidos, ou seja queremos só 1 casa decimal). 
 ```
 
-
-
 #Dimensão e classe do objeto (gbm_assay)
-
 
 ```{r}
 
@@ -215,29 +196,23 @@ class(gbm_assay)
 
 ```
 
-A partir desta análise percebemos que o data_rna_GBM tem 60660 linhas (que correspondem a genes) e 175 colunas (que correspondem a amostras) para além disso, é um objeto da classe RangedSummarizedExperiment, que faz parte do pacote SummarizedExperiment. Esta matriz contém as contagens brutas da espressão genética para cada amostra.
-
+A partir desta análise percebemos que o gbm tem 60660 linhas (que correspondem a genes) e 175 colunas (que correspondem a amostras), para além disso, é um objeto da classe RangedSummarizedExperiment, mais especificamente o essay, que faz parte do pacote SummarizedExperiment.
+Esta matriz contém as contagens brutas da expressão genética para cada amostra.
 
 ```{r}
 sum(is.na(gbm_assay)) #Após uma análise do dataset data_rna_GBM_assay, verificamos que não há presença de valores omissos (NA).
 
-gbm_assay_scale = scale(gbm_assay)   # Standardização
-gbm_assay_scale
+gbm_assay_scale = scale(gbm_assay)   # Standardização 
+gbm_assay_scale # NOTAAAAAAAAAAAAA
 
 
 
 
 ```
 
-
-
-
 ##Preparação dos metadados
 
-
-
-
-Foram as selecionadas as colunas que correspondem aos metadados que consideramos mais pertinentes:
+Selecionamos as colunas que correspondem aos metadados que consideramos mais pertinentes:
 
 **meta_GBM\$race** --\> Representa a raça de cada paciente (white, black or african american).
 
@@ -258,13 +233,10 @@ Foram as selecionadas as colunas que correspondem aos metadados que consideramos
 **meta_GBM\$vital_status** --\> Dados que indicam se o paciente está vivo ou morto no momento da coleta de dados
 
 
-
-
 ### Meta_GBM (colData)
 
-
-O componente colData armazena informações sobre as colunas da matriz de expressão, como anotações de amostras, características dos indivíduos, tratamentos ou condições experimentais, entre outros metadados. Por isso, para analizarmos as colunas da matriz que indicamos anteriormente vamos ter de chamar este componente.
-
+O componente colData armazena informações sobre as colunas da matriz de expressão, como anotações de amostras, características dos indivíduos, tratamentos ou condições experimentais, entre outros metadados.
+Por isso, para analizarmos as colunas da matriz que indicamos anteriormente vamos ter de chamar este componente.
 
 ```{r}
 meta_gbm = colData(gbm)
@@ -281,8 +253,6 @@ colnames(meta_gbm) # nomes das colunas
 
 Com esta tabela podemos realizar subconjuntos de colunas, filtrar dados com base em critérios específicos ou simplesmente visualizar informações relevantes sobre as amostras ou condições experimentais.
 
-
-
 ###Sumário das variáveis
 
 ```{r}
@@ -292,14 +262,9 @@ print(dfSummary(meta_gbm, style = 'grid', graph.magnif = 1, valid.col = FALSE,
       , method = 'render', max.tbl.height = 500)
 ```
 
-
-
-
 ###Descrição das Variáveis presentes nos metadados
 
-
-
-Através da análise do resumo das variáveis presentes no meta_gbm foram as selecionadas as colunas que correspondem aos metadados que consideramos mais pertinentes, nomeadamente:
+Através da análise do resumo das variáveis presentes no meta_gbm foram as selecionadas as colunas que correspondem aos metadados que consideramos mais pertinentes, nomeadamente: 
 
 **meta_gbm\$race** --\> Representa a raça de cada paciente (white, black or african american).
 
@@ -317,59 +282,52 @@ Através da análise do resumo das variáveis presentes no meta_gbm foram as sel
 
 **meta_gbm\$vital_status** --\> Dados que indicam se o paciente está vivo ou morto no momento da coleta de dados.
 
+###Curadoria 
 
-
-###Curadoria
-
-
-A curadoria manual consistiu em verificar as variáveis identificadas e certificar que estavam nos formatos apropriados para a análise estatística. Durante esse processo, foi identificado que várias variáveis estavam em formato de texto (character), o que impossibilitava a sua utilização em análises estatísticas diretas. Para resolver esse problema, as variáveis foram fatorizadas, ou seja, transformadas em variáveis numéricas que representam cada categoria (ou nível) presente na variável original. Isso permitiu que essas variáveis fossem utilizadas na análise estatística de forma apropriada. Isto permitiu maior qualidade e confiabilidade dos resultados obtidos na análise de dados. 
-
-
-
+A curadoria manual consistiu em verificar as variáveis identificadas e certificar que estavam nos formatos apropriados para a análise estatística.
+Durante esse processo, foi identificado que várias variáveis estavam em formato de texto (character), o que impossibilitava a sua utilização em análises estatísticas diretas.
+Para resolver esse problema, as variáveis foram fatorizadas, ou seja, transformadas em variáveis numéricas que representam cada categoria (ou nível) presente na variável original. 
+Isso permitiu que essas variáveis fossem utilizadas na análise estatística de forma apropriada.
+Isto permitiu maior qualidade e confiabilidade dos resultados obtidos na análise de dados. #ter #cuidado, ver
 
 ```{r}
 
-race1 = as.factor(meta_gbm$race)
-age_diag1 = meta_gbm$age_at_diagnosis
-death1=meta_gbm$days_to_death
-gender1 = as.factor(meta_gbm$gender)
-p_grade1 = meta_gbm$paper_Grade
-p_IDH1 = meta_gbm$paper_IDH.status
+race = as.factor(meta_gbm$race) 
+age_diag = meta_gbm$age_at_diagnosis
+death=meta_gbm$days_to_death
+gender = as.factor(meta_gbm$gender)
+p_grade = meta_gbm$paper_Grade
+p_IDH = meta_gbm$paper_IDH.status
 patient = meta_gbm$patient
 tissue = as.factor(meta_gbm$definition)
-mutation1 = meta_gbm$paper_Mutation.Count 
-vital_st1 = as.factor(meta_gbm$vital_status) 
-death1 = meta_gbm$days_to_death
+mutation = meta_gbm$paper_Mutation.Count 
+vital_st = as.factor(meta_gbm$vital_status) 
+death = meta_gbm$days_to_death
 ```
-
-
 
 ## Pré-processamento dos dados
 
-
 ### Tratamento dos valores que estão omissos (NA)
 
-
 ```{r}
-sum(is.na(race1))
+sum(is.na(race))
 ```
 
 ```{r}
-sum(is.na(age_diag1))
+sum(is.na(age_diag))
 ```
 
 ```{r}
-sum(is.na(gender1))
+sum(is.na(gender))
 ```
 
 ```{r}
-sum(is.na(p_grade1))
+sum(is.na(p_grade))
 ```
 
 ```{r}
-sum(is.na(p_IDH1))
+sum(is.na(p_IDH))
 ```
-
 
 ```{r}
 sum(is.na(patient))
@@ -382,49 +340,40 @@ sum(is.na(tissue))
 ```
 
 ```{r}
-sum(is.na(mutation1))
+sum(is.na(mutation))
 
 ```
 
 ```{r}
-sum(is.na(vital_st1))
+sum(is.na(vital_st))
 ```
-
 
 ```{r}
 
-sum(is.na(death1))
+sum(is.na(death))
 
 ```
 
 Após uma análise dos datasets fornecidos, verificamos que existem valores omissos (NA) nas variáveis que pertendemos analisar.
 
-O grande problema de existirem NA nestas variáveis é o facto de afetar a análise a jusante, uma vez que nas análises estatísticas subsequentes existem métodos que não permitem a inclusão de NA, por isso decidimos omiti-los podendo mais tarde recuperar as variáveis com os NA presentes.
-
+O grande problema de existirem NA nestas variáveis é o facto de afetar a análise a jusante, uma vez que nas análises estatísticas subsequentes existem métodos que não permitem a inclusão de NA´s, por isso decidimos omiti-los podendo mais tarde recuperar as variáveis com os NA presentes.
 
 **Eliminação dos NA**
 
-
 ```{r}
-race = na.omit(race1)
-age_diag = na.omit(age_diag1)
-gender = na.omit(gender1)
-p_grade = na.omit(p_grade1)
-p_IDH = na.omit(p_IDH1)
-mutation = na.omit(mutation1)
-vital_st = na.omit(vital_st1)
-death = na.omit(death1)
+race = na.omit(race)
+age_diag = na.omit(age_diag)
+gender = na.omit(gender)
+p_grade = na.omit(p_grade)
+p_IDH = na.omit(p_IDH)
+mutation = na.omit(mutation)
+vital_st = na.omit(vital_st)
+death = na.omit(death)
 ```
-
-
-
 
 ##Gráficos de Apoio á Sumarização
 
-
-
 ### Análise/Visualização Gráfica Exploratõria Variáveis --\> race
-
 
 ```{r}
 
@@ -443,33 +392,28 @@ pie(slices,labels = lbls, col = c("darkslategray1", "coral", "darkolivegreen1", 
 
 ```
 
-
 ### Análise Exploratõria Variáveis --\> age_diag
 
 ```{r}
 
-hist(age_diag, col = c("lightblue"), main= "Idade(em dias) em que o paciente foi diagnosticado", xlab = "Idade quando do diagnóstico (dias)", ylab = "Frequência")
+hist(age_diag, col = c("lightblue"), main= "Idade em que o paciente foi diagnosticado", xlab = "Idade (dias)", ylab = "Frequência")
 
  
 ```
 
 ### Análise Exploratõria Variáveis --\> death
 
-
 ```{r}
 
-hist(death, col = c("lightblue"), main= "Tempo(dias) entre o diagnótico e a morte do paciente ", xlab = "Dias", ylab = "Frequência")
+hist(death, col = c("lightblue"), main= "Tempo entre o diagnóstico e a morte do paciente ", xlab = "Dias", ylab = "Frequência", ylim=c(0,100))
 
  
 ```
 
-
-
-
 ### Análise Exploratõria Variáveis --\> gender
 
 ```{r}
-qplot(gender, fill= gender)
+qplot(gender, fill= gender, ylim=c(0,115), ylab = "Nº de pessoas" ) 
 
 table=table(gender)
 data=as.data.frame(table)
@@ -479,15 +423,12 @@ pct=round(slices/sum(slices)*100)
 lbls=paste(lbls, pct) 
 lbls=paste(lbls,"%",sep="") 
 pie(slices,labels = lbls, col = c("pink", "lightblue"), main="Género")
-
 ```
-
-
 
 ### Análise Exploratõria Variáveis --\> p_IDH
 
 ```{r}
-qplot(p_IDH, fill=p_IDH, main="Estado do gene isocitrato desidrogenase (IDH) nas amostras")
+qplot(p_IDH, fill=p_IDH, main="                       Estado do gene IDH nas amostras")  #esta assim para centrar titulo, nao apagar ESPAÇOS
 
 table=table(p_IDH)
 data=as.data.frame(table)
@@ -496,7 +437,7 @@ lbls=data$p_IDH
 pct=round(slices/sum(slices)*100)
 lbls=paste(lbls, pct) 
 lbls=paste(lbls,"%",sep="") 
-pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1"), main="Estado do gene isocitrato desidrogenase (IDH) nas amostras")
+pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1"), main="Estado do gene isocitrato desidrogenase (IDH) nas amostras") 
 
 ```
 
@@ -507,14 +448,13 @@ qplot(patient)
 
 ```
 
-Problema: Existem casos em que varios pacientes tem o mesmo ID!
-
+Problema: Existem casos em que varios pacientes tem o mesmo ID!??
 
 ### Análise Exploratória Variáveis --\> tissue
 
 ```{r}
 
-qplot(tissue, fill=tissue, main="Representa o tipo de amostra de tecido recolhida")
+qplot(tissue, fill=tissue, main="                        Tipo de tecido") 
 
 
 
@@ -529,11 +469,11 @@ pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"),
 
 ```
 
-
-
 ### Análise Exploratória Variáveis --\> mutation
 
 ```{r}
+
+qplot(mutation) #Escolher
 
 hist(mutation, col = "darkolivegreen1", main = "Número de mutações identificadas no genoma do paciente.")
 
@@ -541,15 +481,12 @@ boxplot(mutation,main = "Número de mutações identificadas no genoma do pacien
 
 ```
 
-
-
 ### Análise Exploratõria Variáveis --\> vital_st
 
-
 ```{r}
-qplot(vital_st, fill= vital_st, main="Estado vital do paciente no momento da coleta de dados")
+qplot(vital_st, fill= vital_st, main="            Estado vital do paciente")
 
-table=table(vital_st)
+table=table(vital_st) 
 data=as.data.frame(table)
 slices=data$Freq
 lbls=data$vital_st
@@ -560,41 +497,57 @@ pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"),
 
 ```
 
+###Avaliar a relação entre o género e a idade de diagnótico
 
-###Avaliar a relação entre o género e a idade de diagnótico 
+De forma a ser possível fazer a análise estatística inerente, é necessário primeiro verificar a normalidade dos dados. Para tal recorremos ao teste de Shapiro-Wilk.
+```{r}
+shapiro.test(age_diag)
+``` 
+H0 (Hipótese nula): Dados seguem uma distribuição normal.
+H1 (Hipótese alternativa): Dados não seguem uma distribuição normal.
+
+Uma vez que o p-value resultante deste teste é uma valor inferior a 0,05, rejeitamos a hipótese nula e concluimos que esta variável não apresenta uma distribuição normal.
+
+#dizer o porquê de escolhermos o wilcox? nao sei se faz sentido
+Desta forma, utilizamos o teste Mann-Whitney como uma alternativa não paramétrica para duas amostras independentes.
+
+```{r}
+wilcox.test(age_diag~gender)
+```
+Uma vez que o p-value é maior que 0,05, não se rejeita a hipótese nula, e concluimos que não existem diferenças nas idades de diagnóstico do cancro entre sexos.
 
 
-**Teste de Levene**
+**Teste de Levene** #cortar?
 
 H0 (Hipótese nula): As variâncias das duas amostras são iguais.
 H1 (Hipótese alternativa): As variâncias das duas amostras são diferentes.
 
-
 Este teste é realizado para determinar se a suposição de homogeneidade de variância pode ser mantida antes de realizar uma análise de variância (ANOVA) ou teste t-pareado.
 
-
 ```{r}
-leveneTest(age_diag ~ gender)
+leveneTest(age_diag~gender) 
 ```
 
-Como a estatística de teste é 0.1562 e o valor-p é 0.6932. O valor-p é maior que 0.05, o que indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais. Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
+Como a estatística de teste é 0.1562 e o valor-p é 0.6932.
+O valor-p é maior que 0.05, o que indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais.
+Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
 
-
-**t-test**
+**t-test** #cortar?
 
 H0: Não há diferença significativa entre as médias dos grupos masculino e feminino para a variável idade de diagnóstico.
 H1: Há diferenças significativa entre as médias dos grupos masculino e feminino para a variável idade de diagnóstico.
 
-
 ```{r}
-t.test(age_diag ~ gender)
+t.test(age_diag ~ gender) #cortar
 ```
-O resultado do t-teste para duas amostras independentes indica que a estatística t é 1.0938 com um valor de p de 0.2765. Como o p-value > 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag". Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
+
+O resultado do t-teste para duas amostras independentes indica que a estatística t é 1.0938 com um valor de p de 0.2765.
+Como o p-value \> 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag".
+Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
 
 Com base nos resultados do t-teste , não há evidências de que existam diferenças significativas entre as médias dos grupos masculino e feminino na variável "age_diag".
 
-
-**ANOVA**
+**ANOVA** #cortar?
 
 ```{r}
 
@@ -603,219 +556,170 @@ res.aov = aov(age_diag ~ gender)
 summary(res.aov)
 ```
 
-
-Uma vez que, a estatística F é 1,27 e o valor de prova 0,261,  indica que o efeito do sexo não é estatisticamente significativo a um nível de significância de 0,05. Com base nos resultados da ANOVA, não há evidências suficientes para sugerir que o género tenha um efeito significativo na idade de diagnóstico. 
-
-
+Uma vez que, a estatística F é 1,27 e o valor de prova 0,261, indica que o efeito do sexo não é estatisticamente significativo a um nível de significância de 0,05.
+Com base nos resultados da ANOVA, não há evidências suficientes para sugerir que o género tenha um efeito significativo na idade de diagnóstico.
 
 **Análise Gráfica: Boxplot Idade aquando do diagnóstico vs Género**
 
-
-
-
-
 ```{r}
-boxplot(age_diag ~ gender, data = meta_gbm, main = "Idade Aquando do Diagnóstico Vs Género", xlab = "Género", ylab = "Idade em anos", col = c( "coral", "darkolivegreen1"))
+boxplot(age_diag ~ gender, main = "Idade de diagnóstico", xlab = "Género", ylab = "Idade (dias)", col = c( "coral", "darkolivegreen1"))
 ```
+Este gráfico confirma visualmente o evidenciado anteriormente, mostrando que não existem diferenças significativas na idade de diagnóstico entre sexos opostos.
 
 
-
-
+###Avaliar a relação entre o tipo de tecido e a idade de diagnótico #faz sentido??
 **Teste de Levene**
 
 H0: As variâncias das duas amostras são iguais.
 H1: As variâncias das duas amostras são diferentes.
 
-
 Este teste é realizado para determinar se a suposição de homogeneidade de variância pode ser mantida antes de realizar uma análise de variância (ANOVA) ou teste t-pareado.
 
-
 ```{r}
-leveneTest(age_diag ~ tissue1)
+leveneTest(age_diag ~ tissue)
 ```
 
-
-A estatística de teste é 0,0722 e o valor-p é 0.7885, como o p-value > 0,05,  indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais. Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
-
+A estatística de teste é 0,0722 e o valor-p é 0.7885, como o p-value \> 0,05, indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais.
+Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
 
 **t-test**
 
 Hipótese nula (H0): Não há diferença significativa entre as médias dos diferentes tipos de tecidos afetados para a variável idade.
 Hipótese alternativa (H1): Há diferenças significativa entre as médias dos grupos masculino e feminino para a variável idade.
 
-
 ```{r}
 t.test ( tissue ~ age_diag)
 ```
 
-
-O resultado do t-teste para duas amostras independentes indica que a estatística t é 1.37 com um valor de p de 0.19 Como o p-value > 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag". Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
+O resultado do t-teste para duas amostras independentes indica que a estatística t é 1.37 com um valor de p de 0.19 Como o p-value \> 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag".
+Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
 
 Com base nos resultados do t-teste , não há evidências de que existam diferenças significativas entre as médias dos diferentes tecidos na variável "age_diag".
-
 
 **ANOVA**
 
 ```{r}
 
-res.aov = aov(age_diag1 ~ tissue)
+res.aov = aov(age_diag ~ tissue)
 
 summary(res.aov)
 ```
 
-
-Uma vez que, a estatística F é 1,63 e o valor de prova 0,203,  indica que o efeito do sexo não é estatisticamente significativo a um nível de significância de 0,05. Com base nos resultados da ANOVA, não há evidências suficientes para sugerir que o tipo tenha um efeito significativo na idade de diagnóstico. 
-
-
-
+Uma vez que, a estatística F é 1,63 e o valor de prova 0,203, indica que o efeito do sexo não é estatisticamente significativo a um nível de significância de 0,05.
+Com base nos resultados da ANOVA, não há evidências suficientes para sugerir que o tipo tenha um efeito significativo na idade de diagnóstico.
 
 **Análise Gráfica: Boxplot Tipo de Tecido vs Idade de Diagnóstico**
 
-
 ```{r}
-boxplot(age_diag1 ~ tissue, data = meta_gbm, main = "Idade Aquando do Diagnóstico Vs Tipo de Tecido", xlab = "Idade", ylab = "Idade em dias", col = c( "coral", "darkolivegreen1"))
+boxplot(age_diag ~ tissue, data = meta_gbm, main = "Idade Aquando do Diagnóstico Vs Tipo de Tecido", xlab = "Idade", ylab = "Idade em dias", col = c( "coral", "darkolivegreen1"))
 
 ```
 
+A análise ANOVA revelou que não existem diferenças significas entre as médias dos grupos da variável "tissue" para os valores de "age_diag", e isso também ficou comprovado pela análise do boxplot associado.
 
-A análise ANOVA revelou que não existem diferenças significas entre as médias dos grupos da variável “tissue” para os valores de “age_diag”, e isso também ficou comprovado pela análise do boxplot associado.
-
-
-
-
-
-###Avaliar a relação entre os tipos de tecidos afetados e o tempo entre o diagnóstico e a morte do paciente
+###Avaliar a relação entre os tipos de tecidos afetados e o tempo entre o diagnóstico e a morte do paciente #faz sentido??
 
 Agora vamos verificar se o tipo de tecido afetado tem alguma implicação no tempo de vida do paciente desde o seu diagnóstico, ou seja na sua mortalidade.
-
-
 
 **Teste de Levene**
 
 H0: As variâncias das duas amostras são iguais.
 H1: As variâncias das duas amostras são diferentes.
 
-
 Este teste é realizado para determinar se a suposição de homogeneidade de variância pode ser mantida antes de realizar uma análise de variância (ANOVA) ou teste t-pareado.
 
-
 ```{r}
-leveneTest(death1 ~ tissue)
+leveneTest(death ~ tissue)
 ```
 
-
-A estatística de teste é 0.0651 e o valor-p é 0.7991, como o p-value > 0,05,  indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais. Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
-
+A estatística de teste é 0.0651 e o valor-p é 0.7991, como o p-value \> 0,05, indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais.
+Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
 
 **t-test**
 
 Hipótese nula (H0): Não há diferença significativa entre as médias dos diferentes tipos de tecidos afetados para a variável death.
 Hipótese alternativa (H1): Há diferenças significativa entre as médias dos diferentes tipos de tecidos afetados para a variável death.
 
-
 ```{r}
-t.test (death1 ~ tissue)
+t.test (death ~ tissue)
 ```
 
-
-O resultado do t-teste para duas amostras independentes indica que a estatística t é -0.92933 com um valor de p de 0.3686 Como o p-value > 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag". Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
-
+O resultado do t-teste para duas amostras independentes indica que a estatística t é -0.92933 com um valor de p de 0.3686 Como o p-value \> 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag".
+Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
 
 Com base nos resultados do t-teste , não há evidências de que existam diferenças significativas entre as médias dos diferentes tecidos na variável "age_diag".
-
 
 **ANOVA**
 
 ```{r}
 
-res.aov = aov(death1 ~ tissue)
+res.aov = aov(death ~ tissue)
 
 summary(res.aov)
 ```
 
-
-Uma vez que, a estatística F é 0.705 e o valor de prova 0.402,  indica que o efeito do sexo não é estatisticamente significativo a um nível de significância de 0,05. Com base nos resultados da ANOVA, não há evidências suficientes para sugerir que o tipo tenha um efeito significativo na idade de diagnóstico. 
+Uma vez que, a estatística F é 0.705 e o valor de prova 0.402, indica que o efeito do sexo não é estatisticamente significativo a um nível de significância de 0,05.
+Com base nos resultados da ANOVA, não há evidências suficientes para sugerir que o tipo tenha um efeito significativo na idade de diagnóstico.
 
 Concluindo, o tipo de tecido em que o cacro foi originado não tem influência significativa na mortalidade dos pacientes com glioblastoma multiforme.
 
-
 **Análise Gráfica: Boxplot Tipo de Tecido vs Idade de Diagnóstico**
 
-
 ```{r}
-boxplot(death1 ~ tissue, data = meta_gbm, main = "Mortalidade Vs Tipo de Tecido", xlab = "Idade", ylab = "Idade em dias", col = c( "coral", "darkolivegreen1"))
+boxplot(death ~ tissue, data = meta_gbm, main = "Mortalidade Vs Tipo de Tecido", xlab = "Idade", ylab = "Idade em dias", col = c( "coral", "darkolivegreen1"))
 
 ```
 
+A análise ANOVA revelou que não existem diferenças significas entre as médias dos grupos da variável "tissue" para os valores de "death", e isso também ficou comprovado pela análise do boxplot associado.
 
-A análise ANOVA revelou que não existem diferenças significas entre as médias dos grupos da variável “tissue” para os valores de “death”, e isso também ficou comprovado pela análise do boxplot associado.
-
-
-###Avaliar a relação entre os tipos de tipos de tecido e o tempo entre o diagnóstico e a morte do paciente
-
-
+###Avaliar a relação entre os tipos de tipos de tecido e a quantidade de vida do paciente
 ```{r}
 
-t_v = table(tissue,vital_st1) # tabela cruzada entre as duas variáveis 
+t_v = table(tissue,vital_st) # tabela cruzada entre as duas variáveis 
 
 ```
-
 
 **Teste Qui-Quadrado**
 
-
-H0:As variáveis são independentes
-H1:As variáveis não são independentes
-
+H0:As variáveis são independentes H1:As variáveis não são independentes
 
 ```{r}
 chisq.test(t_v)
 ```
-Com base na tabela fornecida e no teste qui-quadrado, podemos concluir que existe uma associação significativa entre o tipo de tecido e o estado vital dos pacientes  p-value<0.05. Comcluindo a distribuição do estado vital(se está vivo ou morto) não é a mesma em diferentes tipos de tecidos, há mais mortalidade no caso se for Primary solid Tumor. Rejeita-se a hipotese nula, as variáveis não são independentes
 
-
+Com base na tabela fornecida e no teste qui-quadrado, podemos concluir que existe uma associação significativa entre o tipo de tecido e o estado vital dos pacientes p-value\<0.05.
+Comcluindo a distribuição do estado vital(se está vivo ou morto) não é a mesma em diferentes tipos de tecidos, há mais mortalidade no caso se for Primary solid Tumor.
+Rejeita-se a hipotese nula, as variáveis não são independentes
 
 ###Avaliar a relação entre o género do paciente e o tempo entre o diagnóstico e a morte do paciente
 
-
-
 ```{r}
 
-g_v = table(gender1,vital_st1)
+g_v = table(gender,vital_st)
 g_v
 
 ```
 
-
 ```{r}
 chisq.test(g_v)
 ```
+
 O teste qui-quadrado com correção de continuidade não mostrou diferenças significativas entre o género e a vitalidade do paciente (X-squared = 1.277, df = 2, p-value = 0.5281).
 
-Com base na tabela fornecida e no teste qui-quadrado, podemos concluir que existe uma associação significativa entre o tipo de tecido e o estado vital dos pacientes  p-value>0.05. Portanto, não rejeitamos a hipótese nula de que as duas variáveis são independentes.
+Com base na tabela fornecida e no teste qui-quadrado, podemos concluir que existe uma associação significativa entre o tipo de tecido e o estado vital dos pacientes p-value\>0.05.
+Portanto, não rejeitamos a hipótese nula de que as duas variáveis são independentes.
 
-
-
-#Analise univariada () #a fazer
-
+#Analise univariada () #ja nao esta na tabela??
 
 ```{r}
 dim(gbm_assay_scale)
 ```
 
-
-
-
-
-
-
 #Análise da Expressão diferencial
 
 A análise de expressão diferencial vai ser realizada usando o pacote DESeq2 do Bioconductor.
 
-
 ## DE - Análise da Espressão Diferencial do. IDH.staus
-
 
 ```{r}
 
@@ -827,7 +731,7 @@ ddsSE_IDH = DESeqDataSet(data_de, design = ~ paper_IDH.status)
 keep = rowSums(counts(ddsSE_IDH)) >= 10  #Objetivo do filtro :filtrar as linhas da matriz (counts) que possuem baixos niveis de expressão em todas as amostras. 
 
 
-ddsSE_IDH = ddsSE[keep,]
+ddsSE_IDH = ddsSE_IDH[keep,]
 ddsSE_IDH = DESeq(ddsSE_IDH)
 
 resultsNames(ddsSE_IDH)
@@ -835,52 +739,50 @@ resultsNames(ddsSE_IDH)
 res_IDH = results(ddsSE_IDH, name = "paper_IDH.status_WT_vs_Mutant")
 dea = as.data.frame(res_IDH)
 
-
 summary(res_IDH)
 
 
 ```
 
-A análise da Expressão Diferencial foi feita no subconjunto dos dados TCGA-GBM RNA-seq, onde as amostras com valores ausentes para a variável 'paper_IDH.status' foram removidos e os dados de expressão foram filtrados para manter apenas os genes com pelo menos 10 contagens em todas as amostras e assim permitir-nos filtrar as linhas da matriz (counts) que possuem baixos niveis de expressão em todas as amostras.
+A análise da Expressão Diferencial foi feita no subconjunto dos dados TCGA-GBM de RNA-seq, onde as amostras com valores ausentes para a variável 'p_IDH' foram removidos e os dados de expressão foram filtrados para manter apenas os genes com pelo menos 10 contagens em todas as amostras e assim permitir-nos filtrar as linhas da matriz (counts) que possuem baixos níveis de expressão em todas as amostras.
 
-O resumo (summary(res)) mostra que dos 47.965 genes analisados, 3.464 (7,2%) foram up-regulated(Log2 fold change \> 0) nas amostras com status de tipo selvagem de IDH em comparação com aquelas com status de mutante de IDH. Por outro lado, 2.821 (5,9%) genes foram down-regulated (Log2 fold change \< 0) na mesma comparação.
+O resumo (summary(res)) mostra que dos 47.965 genes analisados, 3.464 (7,2%) foram up-regulated(Log2 fold change \> 0) nas amostras de tipo WT de IDH em comparação com aquelas de mutante de IDH.
+Por outro lado, 2.821 (5,9%) genes foram down-regulated (Log2 fold change \< 0) na mesma comparação.
 
-Também podemos analisar que não houve outliers detetados nos dados e 13.020 genes (27%) tiveram contagens baixas (contagem média \< 1), que não foram usados na análise. Finalmente, o ponto de corte do valor de prova ajustado usado para determinar a significância foi menor que 0,1. Exploração Gráfica: De seguida vamos analisar o gráfico MA, para visualizar as diferenças de expressão génica entre dois grupos.
+Também podemos analisar que não houve outliers detetados nos dados e 13.020 genes (27%) tiveram contagens baixas (contagem média \< 1), que não foram usados na análise.
+Finalmente, o #ponto de corte# do valor de prova ajustado usado para determinar a significância foi menor que 0,1.
+Exploração Gráfica: De seguida vamos analisar o gráfico MA, para visualizar as diferenças de expressão génica entre dois grupos.
 
-
-
-Portanto, se considerarmos aceitável uma fração de 10% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 10% = 0,1 como significativos. Existem 6285 genes significativos.
-
+Portanto, se considerarmos aceitável uma fração de 10% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 10% = 0,1 como significativos.
+Existem 6285 genes significativos.
 
 ```{r}
 sum(res_IDH$padj < 0.1, na.rm=TRUE)
 
 #6276
 ```
-Portanto, se considerarmos aceitável uma fração de 5% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 5% como significativos. Existem 4640 genes significativos.
+
+Portanto, se considerarmos aceitável uma fração de 5% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 5% como significativos.
+Existem 4640 genes significativos.
 
 ```{r}
 sum(res_IDH$padj < 0.05, na.rm=TRUE)
 ```
 
-Subdefinimos a tabela de resultados para esses genes e, em seguida, classificamos pela estimativa de mudança de dobra de log2 para obter os genes significativos com a regulação negativa mais forte:
+Subdefinimos a tabela de resultados para esses genes e, em seguida, classificamos pela estimativa de fold-change de log2 para obter os genes significativos com a regulação negativa mais forte:
 
 ```{r}
 resSig <- subset(res_IDH, padj < 0.1)
 head(resSig[ order(resSig$log2FoldChange), ])
 ```
 
-
-…e com a regulação positiva mais forte:
-
+...e com a regulação positiva mais forte:
 
 ```{r}
 
 
 head(resSig[ order(resSig$log2FoldChange, decreasing = TRUE), ])
 ```
-
-
 
 **TopGene**
 
@@ -891,17 +793,14 @@ topGene = rownames(res_IDH)[which.min(res_IDH$padj)]
 topGene
 ```
 
-
-
-
 **Exploração gráfica: MA Plot**
 
-Este vai nos permitir para visualizar as diferenças de expressão génica entre dois grupos: Genes Diferencialmente Expressos(azul), Outros Genes (Cinza). E podemos observar também o TopGene que corresponde ao gene com menor valor de padj
+Este vai nos permitir para visualizar as diferenças de expressão génica entre dois grupos: Genes Diferencialmente Expressos(azul), Outros Genes (Cinza).
+E podemos observar também o TopGene que corresponde ao gene com menor valor de padj
 
 ```{r}
 DESeq2::plotMA(res_IDH, ylim = c(-7,7))
 
-topGene = rownames(res_IDH)[which.min(res_IDH$padj)]
 with(res_IDH[topGene, ], {
   points(baseMean, log2FoldChange, col="black", cex=2, lwd=2)
   text(baseMean, log2FoldChange, topGene, pos=2, col="black")
@@ -909,9 +808,8 @@ with(res_IDH[topGene, ], {
 
 ```
 
-
-Um gráfico de diagnóstico que também é útil é o histograma dos valores de p (figura abaixo). Este gráfico é melhor formado excluindo genes com contagens muito pequenas, que de outra forma geram picos no histograma.
-
+Um gráfico de diagnóstico que também é útil é o histograma dos valores de p (figura abaixo).
+Este gráfico é melhor formado excluindo genes com contagens muito pequenas, que de outra forma geram picos no histograma. #nao percebemos bem
 
 **Normalização**
 
@@ -920,10 +818,7 @@ hist(res_IDH$pvalue[res_IDH$baseMean > 1], breaks = 0:20/20,
      col = "grey50", border = "white", main=' Contagem média normalizada maior que 1')
 ```
 
-
-
-
-## DE - Diferencal Expression - Género
+## DE - Diferencial Expression - Género
 
 ```{r}
 data_de = gbm[,!is.na(gbm$paper_Gender)]
@@ -943,12 +838,14 @@ summary(res_sex)
 
 A análise da Expressão Diferencial foi feita no subconjunto dos dados TCGA-GBM RNA-seq, onde as amostras com valores ausentes para a variável 'paper_Gender' foram removidos e os dados de expressão foram filtrados para manter apenas os genes com pelo menos 10 contagens em todas as amostras e assim permitir-nos filtrar as linhas da matriz (counts) que possuem baixos niveis de expressão em todas as amostras.
 
-O resumo (summary(res)) mostra que dos 48091 genes analisados, 210 (0.44%) foram up-regulated(Log2 fold change \> 0) nas amostras com status de tipo selvagem de IDH em comparação com aquelas com status de mutante de IDH. Por outro lado, 115 (0.24%) genes foram down-regulated (Log2 fold change \< 0) na mesma comparação.
+O resumo (summary(res)) mostra que dos 48091 genes analisados, 210 (0.44%) foram up-regulated(Log2 fold change \> 0) nas amostras com status de tipo selvagem de IDH em comparação com aquelas com status de mutante de IDH.
+Por outro lado, 115 (0.24%) genes foram down-regulated (Log2 fold change \< 0) na mesma comparação.
 
-Também podemos analisar que não houve outliers detetados nos dados e 13.057 genes (27%) tiveram contagens baixas (contagem média \< 1), que não foram usados na análise. Finalmente, o ponto de corte do valor de prova ajustado usado para determinar a significância foi menor que 0,1.
+Também podemos analisar que não houve outliers detetados nos dados e 13.057 genes (27%) tiveram contagens baixas (contagem média \< 1), que não foram usados na análise.
+Finalmente, o ponto de corte do valor de prova ajustado usado para determinar a significância foi menor que 0,1.
 
-
-Portanto, se considerarmos aceitável uma fração de 10% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 10% = 0,1 como significativos. Existem 325 genes significativos.
+Portanto, se considerarmos aceitável uma fração de 10% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 10% = 0,1 como significativos.
+Existem 325 genes significativos.
 
 ```{r}
 
@@ -956,24 +853,22 @@ sum(res_sex$padj < 0.1, na.rm=TRUE)
 
 #325
 ```
-Portanto, se considerarmos aceitável uma fração de 5% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 5% como significativos. Existem 226 genes significativos.
+
+Portanto, se considerarmos aceitável uma fração de 5% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 5% como significativos.
+Existem 226 genes significativos.
 
 ```{r}
 sum(res_sex$padj < 0.05, na.rm=TRUE)
 ```
 
-
-
 Subdefinimos a tabela de resultados para esses genes e, em seguida, classificamos pela estimativa de mudança de dobra de log2 para obter os genes significativos com a regulação negativa mais forte:
-
 
 ```{r}
 resSig <- subset(res_sex, padj < 0.1)
 head(resSig[ order(resSig$log2FoldChange), ])
 ```
 
-…e com a regulação positiva mais forte:
-
+...e com a regulação positiva mais forte:
 
 ```{r}
 
@@ -984,54 +879,44 @@ head(resSig[ order(resSig$log2FoldChange, decreasing = TRUE), ])
 
 Vamos ver o plot do gene que apresentou o menor valor de prova ajustado (padj), na comparação entre os grupos "male" e "female" do metadado "paper_Gender".
 
-
 ```{r}
-topGene <- rownames(res)[which.min(res$padj)]
+topGene = rownames(res_sex)[which.min(res_sex$padj)]
+topGene
 plotCounts(ddsSE_sex, gene = topGene, intgroup=c("paper_Gender"))
 ```
 
-
 **Exploração gráfica: MA Plot**
 
-
-
 Exploração Gráfica: De seguida vamos analisar o gráfico MA, para visualizar as diferenças de expressão génica entre dois grupos.Genes Diferencialmente Expressos(azul), Outros Genes (Cinza) e adicionámos também o TopGene ao Gráfico.
-
-
-
 
 ```{r}
 
 DESeq2::plotMA(res_sex, ylim = c(-7,7))
-topGene = rownames(res_sex)[which.min(res_sex$padj)]
+
 with(res_sex[topGene, ], {
   points(baseMean, log2FoldChange, col="black", cex=2, lwd=2)
   text(baseMean, log2FoldChange, topGene, pos=2, col="black")
 })
 ```
 
-
 **Normalização**
 
 ```{r}
-hist(res$pvalue[res_sex$baseMean > 1], breaks = 0:20/20,
-     col = "grey50", border = "white", main=' Contagem média normalizada maior que 1')
+hist(res_sex$pvalue[res_sex$baseMean > 1], breaks = 0:20/20,
+     col = "grey50", border = "white", main=' Contagem média normalizada maior que 1', ylim=c(0,3500))
 ```
 
-
-
-## DE - Estatistica descritiva Subtype
+## DE - Estatistica descritiva Subtype #deverá estar em cima?
 
 ```{r}
 
-data_rna_GBM$paper_Original.Subtype
+gbm$paper_Original.Subtype
 
-a = as.factor(data_rna_GBM$paper_Original.Subtype)
+a = as.factor(gbm$paper_Original.Subtype)
 
-qplot(data_rna_GBM$paper_Original.Subtype, fill=a)
+qplot(gbm$paper_Original.Subtype, fill=a)
 
 ```
-
 
 ```{r}
 data_de = gbm[,!is.na(gbm$paper_Original.Subtype)]
@@ -1062,11 +947,6 @@ with(res[topGene, ], {
   text(baseMean, log2FoldChange, topGene, pos=2, col="dodgerblue")
 })
 ```
-
-
-
-
-
 
 ```{r}
 res = results(ddsSE_subtype, name = "paper_Original.Subtype_Neural_vs_Classical")
@@ -1099,24 +979,6 @@ with(res[topGene, ], {
 
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ```{r}
 ## dados clinicos
 
@@ -1128,3 +990,7 @@ View(df)
 
 
 ```
+
+## Análise de enriquecimento
+
+
