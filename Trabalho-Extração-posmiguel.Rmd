@@ -176,28 +176,34 @@ class(gbm)
 A partir desta análise percebemos que o data_rna_GBM tem 60660 linhas (que correspondem a genes) e 175 colunas (que correspondem a amostras) para além disso, é um objeto da classe RangedSummarizedExperiment, que faz parte do pacote SummarizedExperiment. 
 
 
-```{r}
-
-tt = rowttests(gbm_assay_scale, "mol.biol")
-```
-
 
 
 **Visualização dos dados de expressão**
 
-```{r}
 
-gbm_assay = assay(gbm, "unstranded" )  #escolha da assay
-gbm_assay
+## Matrizes counts
+
+```{r}
+countdata <- round(assays(gbm)[["unstranded"]])
+
+countdata
+```
+
+##Sumarização dos dados
+
+```{r}
+dfSummary(gbm_assay)
 ```
 
 
 ```{r}
-plot(gbm_assay)
+round( colSums(assay(gbm)) / 1e6, 1 )  #(o segundo argumento de round informa quantos pontos decimais devem ser mantidos, ou seja queremos só 1 casa decimal).
 ```
+
 
 
 #Dimensão e classe do objeto (gbm_assay)
+
 
 ```{r}
 
@@ -212,10 +218,6 @@ class(gbm_assay)
 A partir desta análise percebemos que o data_rna_GBM tem 60660 linhas (que correspondem a genes) e 175 colunas (que correspondem a amostras) para além disso, é um objeto da classe RangedSummarizedExperiment, que faz parte do pacote SummarizedExperiment. Esta matriz contém as contagens brutas da espressão genética para cada amostra.
 
 
-
-#Sumarização dos dados
-
-
 ```{r}
 sum(is.na(gbm_assay)) #Após uma análise do dataset data_rna_GBM_assay, verificamos que não há presença de valores omissos (NA).
 
@@ -227,11 +229,12 @@ gbm_assay_scale
 
 ```
 
-Esta standardização dos dados vai premitir que todos os valores de expressão dos genes tenham média zero e desvio padrão um.
 
 
 
-##
+##Preparação dos metadados
+
+
 
 
 Foram as selecionadas as colunas que correspondem aos metadados que consideramos mais pertinentes:
@@ -252,31 +255,13 @@ Foram as selecionadas as colunas que correspondem aos metadados que consideramos
 
 **meta_GBM\$paper_Mutation.Count** --\> Representa o número de mutações identificadas no genoma do paciente.
 
-**meta_GBM\$vital_status** --\> Dados que indicam se o paciente está vivo ou morto no momento da coleta de dados.
+**meta_GBM\$vital_status** --\> Dados que indicam se o paciente está vivo ou morto no momento da coleta de dados
 
 
 
 
-## Matrizes counts
+### Meta_GBM (colData)
 
-```{r}
-countdata <- round(assays(gbm)[["unstranded"]])
-
-countdata
-```
-
-
-
-
-```{r}
-round( colSums(assay(gbm)) / 1e6, 1 )  #(o segundo argumento de round informa quantos pontos decimais devem ser mantidos, ou seja queremos só 1 casa decimal).
-```
-
---------------------
-
-
-
-## Meta_GBM (colData)
 
 O componente colData armazena informações sobre as colunas da matriz de expressão, como anotações de amostras, características dos indivíduos, tratamentos ou condições experimentais, entre outros metadados. Por isso, para analizarmos as colunas da matriz que indicamos anteriormente vamos ter de chamar este componente.
 
@@ -298,7 +283,7 @@ Com esta tabela podemos realizar subconjuntos de colunas, filtrar dados com base
 
 
 
-##Sumário das variáveis
+###Sumário das variáveis
 
 ```{r}
 print(dfSummary(meta_gbm, style = 'grid', graph.magnif = 1, valid.col = FALSE,
@@ -310,7 +295,7 @@ print(dfSummary(meta_gbm, style = 'grid', graph.magnif = 1, valid.col = FALSE,
 
 
 
-##Descrição das Variáveis presentes nos metadados
+###Descrição das Variáveis presentes nos metadados
 
 
 
@@ -334,7 +319,7 @@ Através da análise do resumo das variáveis presentes no meta_gbm foram as sel
 
 
 
-**Curadoria**
+###Curadoria
 
 
 A curadoria manual consistiu em verificar as variáveis identificadas e certificar que estavam nos formatos apropriados para a análise estatística. Durante esse processo, foi identificado que várias variáveis estavam em formato de texto (character), o que impossibilitava a sua utilização em análises estatísticas diretas. Para resolver esse problema, as variáveis foram fatorizadas, ou seja, transformadas em variáveis numéricas que representam cada categoria (ou nível) presente na variável original. Isso permitiu que essas variáveis fossem utilizadas na análise estatística de forma apropriada. Isto permitiu maior qualidade e confiabilidade dos resultados obtidos na análise de dados. 
@@ -360,6 +345,7 @@ death1 = meta_gbm$days_to_death
 
 
 ## Pré-processamento dos dados
+
 
 ### Tratamento dos valores que estão omissos (NA)
 
@@ -429,6 +415,11 @@ mutation = na.omit(mutation1)
 vital_st = na.omit(vital_st1)
 death = na.omit(death1)
 ```
+
+
+
+
+##Gráficos de Apoio á Sumarização
 
 
 
@@ -568,9 +559,6 @@ lbls=paste(lbls,"%",sep="")
 pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"), main="Estado vital do paciente no momento da coleta de dados")
 
 ```
-
-
-#Análise Univariada
 
 
 ###Avaliar a relação entre o género e a idade de diagnótico 
@@ -808,6 +796,12 @@ Com base na tabela fornecida e no teste qui-quadrado, podemos concluir que exist
 
 
 
+#Analise univariada () #a fazer
+
+
+```{r}
+dim(gbm_assay_scale)
+```
 
 
 
@@ -828,21 +822,21 @@ A análise de expressão diferencial vai ser realizada usando o pacote DESeq2 do
 
 data_de = gbm[,!is.na(gbm$paper_IDH.status)] #retirar NA
 
-ddsSE = DESeqDataSet(data_de, design = ~ paper_IDH.status)
+ddsSE_IDH = DESeqDataSet(data_de, design = ~ paper_IDH.status)
 
-keep = rowSums(counts(ddsSE)) >= 10  #Objetivo do filtro :filtrar as linhas da matriz (counts) que possuem baixos niveis de expressão em todas as amostras. 
-
-
-ddsSE = ddsSE[keep,]
-ddsSE = DESeq(ddsSE)
-
-resultsNames(ddsSE)
-
-res = results(ddsSE, name = "paper_IDH.status_WT_vs_Mutant")
-dea = as.data.frame(res)
+keep = rowSums(counts(ddsSE_IDH)) >= 10  #Objetivo do filtro :filtrar as linhas da matriz (counts) que possuem baixos niveis de expressão em todas as amostras. 
 
 
-summary(res)
+ddsSE_IDH = ddsSE[keep,]
+ddsSE_IDH = DESeq(ddsSE_IDH)
+
+resultsNames(ddsSE_IDH)
+
+res_IDH = results(ddsSE_IDH, name = "paper_IDH.status_WT_vs_Mutant")
+dea = as.data.frame(res_IDH)
+
+
+summary(res_IDH)
 
 
 ```
@@ -859,10 +853,45 @@ Portanto, se considerarmos aceitável uma fração de 10% de falsos positivos, p
 
 
 ```{r}
-sum(res$padj < 0.1, na.rm=TRUE)
+sum(res_IDH$padj < 0.1, na.rm=TRUE)
 
-#6285
+#6276
 ```
+Portanto, se considerarmos aceitável uma fração de 5% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 5% como significativos. Existem 4640 genes significativos.
+
+```{r}
+sum(res_IDH$padj < 0.05, na.rm=TRUE)
+```
+
+Subdefinimos a tabela de resultados para esses genes e, em seguida, classificamos pela estimativa de mudança de dobra de log2 para obter os genes significativos com a regulação negativa mais forte:
+
+```{r}
+resSig <- subset(res_IDH, padj < 0.1)
+head(resSig[ order(resSig$log2FoldChange), ])
+```
+
+
+…e com a regulação positiva mais forte:
+
+
+```{r}
+
+
+head(resSig[ order(resSig$log2FoldChange, decreasing = TRUE), ])
+```
+
+
+
+**TopGene**
+
+E podemos observar também o TopGene que corresponde ao gene com menor valor de padj
+
+```{r}
+topGene = rownames(res_IDH)[which.min(res_IDH$padj)]
+topGene
+```
+
+
 
 
 **Exploração gráfica: MA Plot**
@@ -870,23 +899,14 @@ sum(res$padj < 0.1, na.rm=TRUE)
 Este vai nos permitir para visualizar as diferenças de expressão génica entre dois grupos: Genes Diferencialmente Expressos(azul), Outros Genes (Cinza). E podemos observar também o TopGene que corresponde ao gene com menor valor de padj
 
 ```{r}
-DESeq2::plotMA(res, ylim = c(-7,7))
+DESeq2::plotMA(res_IDH, ylim = c(-7,7))
 
-topGene = rownames(res)[which.min(res$padj)]
-with(res[topGene, ], {
+topGene = rownames(res_IDH)[which.min(res_IDH$padj)]
+with(res_IDH[topGene, ], {
   points(baseMean, log2FoldChange, col="black", cex=2, lwd=2)
-  text(baseMean, log2FoldChange, topGene, loc=-2, col="black")
+  text(baseMean, log2FoldChange, topGene, pos=2, col="black")
 })
 
-```
-
-
-**TopGene**
-
-
-```{r}
-topGene = rownames(res)[which.min(res$padj)]
-topGene
 ```
 
 
@@ -896,7 +916,7 @@ Um gráfico de diagnóstico que também é útil é o histograma dos valores de 
 **Normalização**
 
 ```{r}
-hist(res$pvalue[res$baseMean > 1], breaks = 0:20/20,
+hist(res_IDH$pvalue[res_IDH$baseMean > 1], breaks = 0:20/20,
      col = "grey50", border = "white", main=' Contagem média normalizada maior que 1')
 ```
 
@@ -916,9 +936,9 @@ ddsSE_sex = DESeq(ddsSE_sex)
 
 resultsNames(ddsSE_sex)
 
-res = results(ddsSE_sex, name = "paper_Gender_male_vs_female")
-dea = as.data.frame(res)
-summary(res)
+res_sex = results(ddsSE_sex, name = "paper_Gender_male_vs_female")
+dea = as.data.frame(res_sex)
+summary(res_sex)
 ```
 
 A análise da Expressão Diferencial foi feita no subconjunto dos dados TCGA-GBM RNA-seq, onde as amostras com valores ausentes para a variável 'paper_Gender' foram removidos e os dados de expressão foram filtrados para manter apenas os genes com pelo menos 10 contagens em todas as amostras e assim permitir-nos filtrar as linhas da matriz (counts) que possuem baixos niveis de expressão em todas as amostras.
@@ -928,21 +948,27 @@ O resumo (summary(res)) mostra que dos 48091 genes analisados, 210 (0.44%) foram
 Também podemos analisar que não houve outliers detetados nos dados e 13.057 genes (27%) tiveram contagens baixas (contagem média \< 1), que não foram usados na análise. Finalmente, o ponto de corte do valor de prova ajustado usado para determinar a significância foi menor que 0,1.
 
 
-Portanto, se considerarmos aceitável uma fração de 10% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 10% = 0,1 como significativos. Existem 325 genes significativos?
+Portanto, se considerarmos aceitável uma fração de 10% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 10% = 0,1 como significativos. Existem 325 genes significativos.
 
 ```{r}
 
-sum(res$padj < 0.1, na.rm=TRUE)
+sum(res_sex$padj < 0.1, na.rm=TRUE)
 
 #325
+```
+Portanto, se considerarmos aceitável uma fração de 5% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 5% como significativos. Existem 226 genes significativos.
+
+```{r}
+sum(res_sex$padj < 0.05, na.rm=TRUE)
 ```
 
 
 
 Subdefinimos a tabela de resultados para esses genes e, em seguida, classificamos pela estimativa de mudança de dobra de log2 para obter os genes significativos com a regulação negativa mais forte:
 
+
 ```{r}
-resSig <- subset(res, padj < 0.1)
+resSig <- subset(res_sex, padj < 0.1)
 head(resSig[ order(resSig$log2FoldChange), ])
 ```
 
@@ -953,6 +979,7 @@ head(resSig[ order(resSig$log2FoldChange), ])
 
 
 head(resSig[ order(resSig$log2FoldChange, decreasing = TRUE), ])
+
 ```
 
 Vamos ver o plot do gene que apresentou o menor valor de prova ajustado (padj), na comparação entre os grupos "male" e "female" do metadado "paper_Gender".
@@ -960,7 +987,7 @@ Vamos ver o plot do gene que apresentou o menor valor de prova ajustado (padj), 
 
 ```{r}
 topGene <- rownames(res)[which.min(res$padj)]
-plotCounts(ddsSE, gene = topGene, intgroup=c("paper_Gender"))
+plotCounts(ddsSE_sex, gene = topGene, intgroup=c("paper_Gender"))
 ```
 
 
@@ -975,12 +1002,11 @@ Exploração Gráfica: De seguida vamos analisar o gráfico MA, para visualizar 
 
 ```{r}
 
-DESeq2::plotMA(res, ylim = c(-7,7))
-
-topGene <- rownames(res)[which.min(res$padj)]
-with(res[topGene, ], {
-  points(baseMean, log2FoldChange, col="dodgerblue", cex=2, lwd=2)
-  text(baseMean, log2FoldChange, topGene, pos=2, col="dodgerblue")
+DESeq2::plotMA(res_sex, ylim = c(-7,7))
+topGene = rownames(res_sex)[which.min(res_sex$padj)]
+with(res_sex[topGene, ], {
+  points(baseMean, log2FoldChange, col="black", cex=2, lwd=2)
+  text(baseMean, log2FoldChange, topGene, pos=2, col="black")
 })
 ```
 
@@ -988,7 +1014,7 @@ with(res[topGene, ], {
 **Normalização**
 
 ```{r}
-hist(res$pvalue[res$baseMean > 1], breaks = 0:20/20,
+hist(res$pvalue[res_sex$baseMean > 1], breaks = 0:20/20,
      col = "grey50", border = "white", main=' Contagem média normalizada maior que 1')
 ```
 
@@ -997,39 +1023,35 @@ hist(res$pvalue[res$baseMean > 1], breaks = 0:20/20,
 ## DE - Estatistica descritiva Subtype
 
 ```{r}
-data_rna_GBM$paper_Original.Subtype
 
+data_rna_GBM$paper_Original.Subtype
 
 a = as.factor(data_rna_GBM$paper_Original.Subtype)
 
 qplot(data_rna_GBM$paper_Original.Subtype, fill=a)
 
-
-
 ```
-
-
 
 
 ```{r}
 data_de = gbm[,!is.na(gbm$paper_Original.Subtype)]
 
-ddsSE = DESeqDataSet(data_de, design = ~ paper_Original.Subtype)
+ddsSE_subtype = DESeqDataSet(data_de, design = ~ paper_Original.Subtype)
 
-keep = rowSums(counts(ddsSE)) >= 10
-ddsSE = ddsSE[keep,]
-ddsSE = DESeq(ddsSE)
+keep = rowSums(counts(ddsSE_subtype)) >= 10
+ddsSE_subtype = ddsSE_subtype[keep,]
+ddsSE_subtype = DESeq(ddsSE_subtype)
 
-resultsNames(ddsSE)
+resultsNames(ddsSE_subtype)
 
-res = results(ddsSE, name = "paper_Original.Subtype_G.CIMP_vs_Classical")
+res = results(ddsSE_subtype, name = "paper_Original.Subtype_G.CIMP_vs_Classical")
 dea = as.data.frame(res)
 summary(res)
 a = DESeq2::plotMA(res, ylim = c(-7,7), main="paper_Original.Subtype_G.CIMP_vs_Classical")
 ```
 
 ```{r}
-res = results(ddsSE, name = "paper_Original.Subtype_Mesenchymal_vs_Classical")
+res = results(ddsSE_subtype, name = "paper_Original.Subtype_Mesenchymal_vs_Classical")
 dea = as.data.frame(res)
 summary(res)
 
@@ -1047,7 +1069,7 @@ with(res[topGene, ], {
 
 
 ```{r}
-res = results(ddsSE, name = "paper_Original.Subtype_Neural_vs_Classical")
+res = results(ddsSE_subtype, name = "paper_Original.Subtype_Neural_vs_Classical")
 dea = as.data.frame(res)
 summary(res)
 
@@ -1061,7 +1083,7 @@ with(res[topGene, ], {
 ```
 
 ```{r}
-res = results(ddsSE, name = "paper_Original.Subtype_Proneural_vs_Classical")
+res = results(ddsSE_subtype, name = "paper_Original.Subtype_Proneural_vs_Classical")
 dea = as.data.frame(res)
 summary(res)
 
