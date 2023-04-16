@@ -57,6 +57,14 @@ As informações para o TCGA-GBM foram coletadas de amostras de tecido tumoral r
 
 Os dados do TCGA-GBM são extremamente importantes para a compreensão do glioblastoma multiforme e possibilitarão bioinformáticos e investigadores encontrar novos alvos terapêuticos para o tratamento desse tipo de cancro. Além disso, esses dados poderão ser usados para desenvolver novas terapias, identificar indicadores e melhorar o diagnóstico e tratamento de GBM .
 
+
+#Instalação de packages
+```{r}
+install.packages("car")
+install.packages("summarytools")
+```
+
+
 # Import das Librarys
 
 ```{r}
@@ -71,12 +79,18 @@ library(Glimma)
 library(gplots)
 library(org.Mm.eg.db)
 library(RColorBrewer)
+library(car)
+library(genefilter)
+library(summarytools)
 
 ```
 
-# Recolha dos dados
 
-### Importação dados de Expressão/Metadados
+
+# Recolha dos dados: Importação e Carregamento dados de Expressão/Metadados e Verificação do seu conteúdo e dimensão
+
+
+### Importação de dados de Expressão/Metadados
 
 ```{r}
 
@@ -96,6 +110,8 @@ gbm
 
 ```
 
+
+
 ### Importação dados dos Dados clinicos
 
 ```{r}
@@ -108,12 +124,15 @@ query_clin = GDCquery(project = "TCGA-GBM",
 GDCdownload(query_clin)
 
 clinical.GBM = GDCprepare(query_clin)
+clinical.GBM
 ```
 
 
 
 
-# Estrutura dos dados : Vizualização do dataset
+### Vizualização dos dados e Verificação do seu conteúdo e dimensão
+
+
 
 
 **Visualização dos objetos da class RangedSummarizedExperiment** 
@@ -121,6 +140,8 @@ clinical.GBM = GDCprepare(query_clin)
 ```{r}
 gbm
 ```
+
+
 
 **Visualização dos dados presentes na assay**
 
@@ -130,12 +151,16 @@ assayNames(gbm)
 
 
 
+
+
 **Vizualização dos 5 primeiros e 5 últimos genes**
 
 ```{r}
 rowRanges(gbm)
 
 ```
+
+
 
 
 
@@ -151,20 +176,20 @@ class(gbm)
 A partir desta análise percebemos que o data_rna_GBM tem 60660 linhas (que correspondem a genes) e 175 colunas (que correspondem a amostras) para além disso, é um objeto da classe RangedSummarizedExperiment, que faz parte do pacote SummarizedExperiment. 
 
 
+```{r}
+
+tt = rowttests(gbm_assay_scale, "mol.biol")
+```
+
+
 
 **Visualização dos dados de expressão**
 
 ```{r}
 
 gbm_assay = assay(gbm, "unstranded" )  #escolha da assay
-
+gbm_assay
 ```
-
-
-
-
-
-
 
 
 ```{r}
@@ -172,9 +197,7 @@ plot(gbm_assay)
 ```
 
 
-
-
-#Dimensão e classe do objeto (data_rna_GBM)
+#Dimensão e classe do objeto (gbm_assay)
 
 ```{r}
 
@@ -189,11 +212,15 @@ class(gbm_assay)
 A partir desta análise percebemos que o data_rna_GBM tem 60660 linhas (que correspondem a genes) e 175 colunas (que correspondem a amostras) para além disso, é um objeto da classe RangedSummarizedExperiment, que faz parte do pacote SummarizedExperiment. Esta matriz contém as contagens brutas da espressão genética para cada amostra.
 
 
+
+#Sumarização dos dados
+
+
 ```{r}
 sum(is.na(gbm_assay)) #Após uma análise do dataset data_rna_GBM_assay, verificamos que não há presença de valores omissos (NA).
 
 gbm_assay_scale = scale(gbm_assay)   # Standardização
-data_rna_GBM_assay_scale
+gbm_assay_scale
 
 
 
@@ -215,17 +242,17 @@ Foram as selecionadas as colunas que correspondem aos metadados que consideramos
 
 **meta_GBM\$gender** --\> Representa o género dos pacientes (male, female).
 
-meta_GBM\$paper_Grade\*\* --\> Representa o grau de malignidade do tumor (G4)
+**meta_GBM\$paper_Grade** --\> Representa o grau de malignidade do tumor (G4)
 
-meta_GBM\$paper_IDH.status --\> Representa o estado do gene isocitrato desidrogenase (IDH) nas amostras (WT, Mutant)
+**meta_GBM\$paper_IDH.status** --\> Representa o estado do gene isocitrato desidrogenase (IDH) nas amostras (WT, Mutant)
 
-meta_GBM\$patient --\> Representa o ID do Paciente
+**meta_GBM\$patient** --\> Representa o ID do Paciente
 
-meta_GBM\$definition --\> Representa o tipo de amostra de tecido recolhida (Primary solid Tumor, Recurrent Solid Tumor, Solid Tissue Normal)
+**meta_GBM\$definition** --\> Representa o tipo de amostra de tecido recolhida (Primary solid Tumor, Recurrent Solid Tumor, Solid Tissue Normal)
 
-meta_GBM\$paper_Mutation.Count --\> Representa o número de mutações identificadas no genoma do paciente.
+**meta_GBM\$paper_Mutation.Count** --\> Representa o número de mutações identificadas no genoma do paciente.
 
-meta_GBM\$vital_status --\> Dados que indicam se o paciente está vivo ou morto no momento da coleta de dados.
+**meta_GBM\$vital_status** --\> Dados que indicam se o paciente está vivo ou morto no momento da coleta de dados.
 
 
 
@@ -244,58 +271,6 @@ countdata
 ```{r}
 round( colSums(assay(gbm)) / 1e6, 1 )  #(o segundo argumento de round informa quantos pontos decimais devem ser mantidos, ou seja queremos só 1 casa decimal).
 ```
-
-##Pré-processamento dos dados
-
-
-###Tratamento de valores omissos
-
-
-
-```{r}
-sum(is.na(race))
-```
-
-```{r}
-sum(is.na(age_diag))
-```
-
-```{r}
-sum(is.na(gender))
-```
-
-```{r}
-sum(is.na(p_grade))
-```
-
-```{r}
-sum(is.na(p_IDH))
-```
-
-
-```{r}
-sum(is.na(patient))
-
-```
-
-```{r}
-sum(is.na(tissue))
-
-```
-
-```{r}
-sum(is.na(mutation))
-
-```
-
-```{r}
-sum(is.na(vital_st))
-
-```
-
-
-
-
 
 --------------------
 
@@ -321,6 +296,8 @@ colnames(meta_gbm) # nomes das colunas
 
 Com esta tabela podemos realizar subconjuntos de colunas, filtrar dados com base em critérios específicos ou simplesmente visualizar informações relevantes sobre as amostras ou condições experimentais.
 
+
+
 ##Sumário das variáveis
 
 ```{r}
@@ -334,8 +311,6 @@ print(dfSummary(meta_gbm, style = 'grid', graph.magnif = 1, valid.col = FALSE,
 
 
 ##Descrição das Variáveis presentes nos metadados
-
-
 
 
 
@@ -369,20 +344,91 @@ A curadoria manual consistiu em verificar as variáveis identificadas e certific
 
 ```{r}
 
-race = as.factor(meta_gbm$race)
-age_diag = meta_gbm$age_at_diagnosis
-gender = as.factor(meta_gbm$gender)
-p_grade = meta_gbm$paper_Grade
-p_IDH = meta_gbm$paper_IDH.status
+race1 = as.factor(meta_gbm$race)
+age_diag1 = meta_gbm$age_at_diagnosis
+death1=meta_gbm$days_to_death
+gender1 = as.factor(meta_gbm$gender)
+p_grade1 = meta_gbm$paper_Grade
+p_IDH1 = meta_gbm$paper_IDH.status
 patient = meta_gbm$patient
 tissue = as.factor(meta_gbm$definition)
-mutation = meta_gbm$paper_Mutation.Count 
-vital_st = as.factor(meta_gbm$vital_status) 
-
+mutation1 = meta_gbm$paper_Mutation.Count 
+vital_st1 = as.factor(meta_gbm$vital_status) 
+death1 = meta_gbm$days_to_death
 ```
 
 
 
+## Pré-processamento dos dados
+
+### Tratamento dos valores que estão omissos (NA)
+
+
+```{r}
+sum(is.na(race1))
+```
+
+```{r}
+sum(is.na(age_diag1))
+```
+
+```{r}
+sum(is.na(gender1))
+```
+
+```{r}
+sum(is.na(p_grade1))
+```
+
+```{r}
+sum(is.na(p_IDH1))
+```
+
+
+```{r}
+sum(is.na(patient))
+
+```
+
+```{r}
+sum(is.na(tissue))
+
+```
+
+```{r}
+sum(is.na(mutation1))
+
+```
+
+```{r}
+sum(is.na(vital_st1))
+```
+
+
+```{r}
+
+sum(is.na(death1))
+
+```
+
+Após uma análise dos datasets fornecidos, verificamos que existem valores omissos (NA) nas variáveis que pertendemos analisar.
+
+O grande problema de existirem NA nestas variáveis é o facto de afetar a análise a jusante, uma vez que nas análises estatísticas subsequentes existem métodos que não permitem a inclusão de NA, por isso decidimos omiti-los podendo mais tarde recuperar as variáveis com os NA presentes.
+
+
+**Eliminação dos NA**
+
+
+```{r}
+race = na.omit(race1)
+age_diag = na.omit(age_diag1)
+gender = na.omit(gender1)
+p_grade = na.omit(p_grade1)
+p_IDH = na.omit(p_IDH1)
+mutation = na.omit(mutation1)
+vital_st = na.omit(vital_st1)
+death = na.omit(death1)
+```
 
 
 
@@ -416,6 +462,19 @@ hist(age_diag, col = c("lightblue"), main= "Idade(em dias) em que o paciente foi
  
 ```
 
+### Análise Exploratõria Variáveis --\> death
+
+
+```{r}
+
+hist(death, col = c("lightblue"), main= "Tempo(dias) entre o diagnótico e a morte do paciente ", xlab = "Dias", ylab = "Frequência")
+
+ 
+```
+
+
+
+
 ### Análise Exploratõria Variáveis --\> gender
 
 ```{r}
@@ -431,6 +490,7 @@ lbls=paste(lbls,"%",sep="")
 pie(slices,labels = lbls, col = c("pink", "lightblue"), main="Género")
 
 ```
+
 
 
 ### Análise Exploratõria Variáveis --\> p_IDH
@@ -449,7 +509,7 @@ pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1"), main="Estado d
 
 ```
 
-### Análise Exploratõria Variáveis --\> patient
+### Análise Exploratória Variáveis --\> patient
 
 ```{r}
 qplot(patient) 
@@ -459,9 +519,7 @@ qplot(patient)
 Problema: Existem casos em que varios pacientes tem o mesmo ID!
 
 
-
-
-### Análise Exploratõria Variáveis --\> tissue
+### Análise Exploratória Variáveis --\> tissue
 
 ```{r}
 
@@ -493,58 +551,25 @@ boxplot(mutation,main = "Número de mutações identificadas no genoma do pacien
 ```
 
 
+### Análise Exploratõria Variáveis --\> sample_type
 
+```{r}
+qplot(sample_type, fill= sample_type, main="Tipos de Amostra")
+
+table=table(sample_type)
+data=as.data.frame(table)
+slices=data$Freq
+lbls=data$sample_ty
+pct=round(slices/sum(slices)*100)
+lbls=paste(lbls, pct) 
+lbls=paste(lbls,"%",sep="") 
+pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"), main="Tipos de Amostra")
+
+```
 
 
 
 ### Análise Exploratõria Variáveis --\> vital_st
-
-```{r}
-
-library(ggplot2)
-# Basic density
-p <- ggplot(mutation, aes(x=mutation)) + 
-  geom_density()
-p
-# Add mean line
-p+ geom_vline(aes(xintercept=mean(mutation)),
-            color="blue", linetype="dashed", size=1)
-
-```
-
-##Análise univariada
-
-
-
-
-```{r}
-shapiro.test(age_diag)
-```
-
-```{r}
-shapiro.test(mutation)
-```
-
-
-
-inta
-```{r}
-
-install.packages("summarytools")
-library(summarytools)
-
-dfSummary(meta_gbm)
-```
-
-```{r}
-t.test(mutation)
-```
-```{r}
-t.test(age_diag)
-```
-
-
-
 
 
 ```{r}
@@ -560,6 +585,143 @@ lbls=paste(lbls,"%",sep="")
 pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"), main="Estado vital do paciente no momento da coleta de dados")
 
 ```
+
+
+#Análise Univariada
+
+
+###Avaliar a relação entre o género e a idade de diagnótico 
+
+
+**Teste de Levene**
+
+H0: As variâncias das duas amostras são iguais.
+H1: As variâncias das duas amostras são diferentes.
+
+
+Este teste é realizado para determinar se a suposição de homogeneidade de variância pode ser mantida antes de realizar uma análise de variância (ANOVA) ou teste t-pareado.
+
+
+```{r}
+leveneTest(meta_gbm$age_diag ~ meta_gbm$gender)
+```
+
+Como a estatística de teste é 0.1562 e o valor-p é 0.6932. O valor-p é maior que 0,05, o que indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais. Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
+
+
+**t-test**
+
+Hipótese nula (H0): Não há diferença significativa entre as médias dos grupos masculino e feminino para a variável idade de diagnóstico.
+Hipótese alternativa (H1): Há diferenças significativa entre as médias dos grupos masculino e feminino para a variável idade de diagnóstico.
+
+
+```{r}
+t.test(meta_gbm$age_diag ~ meta_gbm$gender)
+```
+O resultado do t-teste para duas amostras independentes indica que a estatística t é 1.0938 com um valor de p de 0.2765. Como o p-value > 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag". Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
+
+Com base nos resultados do t-teste , não há evidências de que existam diferenças significativas entre as médias dos grupos masculino e feminino na variável "age_diag".
+
+
+**ANOVA**
+
+```{r}
+
+res.aov = aov(meta_gbm$age_diag ~ meta_gbm$gender)
+
+summary(res.aov)
+```
+
+
+Uma vez que, a estatística F é 1,27 e o valor de prova 0,261,  indica que o efeito do sexo não é estatisticamente significativo a um nível de significância de 0,05. Com base nos resultados da ANOVA, não há evidências suficientes para sugerir que o género tenha um efeito significativo na idade de diagnóstico. 
+
+
+
+**Análise Gráfica: Boxplot Idade aquando do diagnóstico vs Género**
+
+
+
+
+
+```{r}
+boxplot(age_diag ~ gender, data = meta_gbm, main = "Idade Aquando do Diagnóstico Vs Género", xlab = "Género", ylab = "Idade em anos", col = c( "coral", "darkolivegreen1"))
+```
+
+
+
+
+**Teste de Levene**
+
+H0: As variâncias das duas amostras são iguais.
+H1: As variâncias das duas amostras são diferentes.
+
+
+Este teste é realizado para determinar se a suposição de homogeneidade de variância pode ser mantida antes de realizar uma análise de variância (ANOVA) ou teste t-pareado.
+
+
+```{r}
+leveneTest(age_diag ~ tissue)
+```
+
+A estatística de teste é 0,0722 e o valor-p é 0.7885, como o p-value > 0,05,  indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais. Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
+
+
+**t-test**
+
+Hipótese nula (H0): Não há diferença significativa entre as médias dos diferentes tipos de tecidos afetados para a variável idade.
+Hipótese alternativa (H1): Há diferenças significativa entre as médias dos grupos masculino e feminino para a variável idade.
+
+
+```{r}
+t.test(age_diag ~ tissue )
+```
+
+
+O resultado do t-teste para duas amostras independentes indica que a estatística t é 1.37 com um valor de p de 0.19 Como o p-value > 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag". Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
+
+Com base nos resultados do t-teste , não há evidências de que existam diferenças significativas entre as médias dos diferentes tecidos na variável "age_diag".
+
+
+**ANOVA**
+
+```{r}
+
+res.aov = aov(age_diag ~ tissue)
+
+summary(res.aov)
+```
+
+
+Uma vez que, a estatística F é 1,63 e o valor de prova 0,203,  indica que o efeito do sexo não é estatisticamente significativo a um nível de significância de 0,05. Com base nos resultados da ANOVA, não há evidências suficientes para sugerir que o tipo tenha um efeito significativo na idade de diagnóstico. 
+
+
+
+
+**Análise Gráfica: Boxplot Tipo de Tecido vs Idade de Diagnóstico**
+
+
+```{r}
+boxplot(age_diag ~ tissue, data = meta_gbm, main = "Idade Aquando do Diagnóstico Vs Tipo de Tecido", xlab = "Idade", ylab = "Idade em dias", col = c( "coral", "darkolivegreen1"))
+
+```
+
+
+A análise ANOVA revelou que não existem diferenças significas entre as médias dos grupos da variável “tissue” para os valores de “age_diag”, e isso também ficou comprovado pela análise do boxplot associado.
+
+
+
+###Avaliar a relação entre o género e a idade de diagnótico 
+
+```{r}
+ttest(mutation~death)
+```
+
+
+
+
+
+
+
 
 
 
