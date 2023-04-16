@@ -578,28 +578,28 @@ pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"),
 
 **Teste de Levene**
 
-H0: As variâncias das duas amostras são iguais.
-H1: As variâncias das duas amostras são diferentes.
+H0 (Hipótese nula): As variâncias das duas amostras são iguais.
+H1 (Hipótese alternativa): As variâncias das duas amostras são diferentes.
 
 
 Este teste é realizado para determinar se a suposição de homogeneidade de variância pode ser mantida antes de realizar uma análise de variância (ANOVA) ou teste t-pareado.
 
 
 ```{r}
-leveneTest(meta_gbm$age_diag ~ meta_gbm$gender)
+leveneTest(age_diag ~ gender)
 ```
 
-Como a estatística de teste é 0.1562 e o valor-p é 0.6932. O valor-p é maior que 0,05, o que indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais. Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
+Como a estatística de teste é 0.1562 e o valor-p é 0.6932. O valor-p é maior que 0.05, o que indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais. Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
 
 
 **t-test**
 
-Hipótese nula (H0): Não há diferença significativa entre as médias dos grupos masculino e feminino para a variável idade de diagnóstico.
-Hipótese alternativa (H1): Há diferenças significativa entre as médias dos grupos masculino e feminino para a variável idade de diagnóstico.
+H0: Não há diferença significativa entre as médias dos grupos masculino e feminino para a variável idade de diagnóstico.
+H1: Há diferenças significativa entre as médias dos grupos masculino e feminino para a variável idade de diagnóstico.
 
 
 ```{r}
-t.test(meta_gbm$age_diag ~ meta_gbm$gender)
+t.test(age_diag ~ gender)
 ```
 O resultado do t-teste para duas amostras independentes indica que a estatística t é 1.0938 com um valor de p de 0.2765. Como o p-value > 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag". Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
 
