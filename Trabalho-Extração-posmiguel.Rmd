@@ -917,33 +917,7 @@ with(res[topGene, ], {
 
 Os gráficos de expressão diferencial mostram (azul) os genes que são diferencialmente expressos (DE), entre as diferentes condições que constam da análise anterior.Para além disso, consta também no gráfico o TopGene referente a cada análise.
 
-
-
-
-### Heatmap IDH_status
-
-```{r}
-
-dea = as.data.frame(res_IDH)
-dea_fc = subset(dea, abs(log2FoldChange) > 1 & padj < 0.05)
-
-
-norm_counts = counts(ddsSE_IDH, normalized=TRUE)[row.names(dea_fc),]
-norm_counts = norm_counts[,0:10]
-norm_counts
-
-
-pheatmap(norm_counts, cluster_rows=TRUE, cluster_cols=TRUE, scale="row", show_rownames=False)
-
-
-```
-
-
-
-
 ### Heatmap gender
-
-
 
 ```{r}
 dea = as.data.frame(res_sex)
@@ -959,32 +933,7 @@ pheatmap(norm_counts, cluster_rows=TRUE, cluster_cols=TRUE, scale="row", show_ro
 
 
 ```
-
-
-
-### Heatmap subtype
-
-
-
-```{r}
-dea = as.data.frame(res)
-dea_fc = subset(dea, abs(log2FoldChange) > 1 & padj < 0.05)
-
-
-norm_counts = counts(ddsSE_subtype, normalized=TRUE)[row.names(dea_fc),]
-norm_counts = norm_counts[,0:10]
-norm_counts
-
-
-pheatmap(norm_counts, cluster_rows=TRUE, cluster_cols=TRUE, scale="row", show_rownames=FALSE)
-```
-
-
-
 **Conclusão** :  O heatmap é um tipo de análise que permite a visualização de diferentes níveis de expressão (sobre e sob expressão) com recurso a cores. Neste caso, selecionamos os 10 primeiros genes a título de exemplo para verificar os seus níveis de expressão.  Quanto mais carregada for a cor -azul para sobre-expressão e vermelho para sob-expressão- mais diferencialmente expresso é o gene.
-
-
-
 
 
 ## Análise de enriquecimento
