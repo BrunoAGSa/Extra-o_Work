@@ -66,18 +66,11 @@ Os dados do TCGA-GBM são extremamente importantes para a compreensão do gliobl
 Além disso, esses dados poderão ser usados para desenvolver novas terapias, identificar indicadores e melhorar o diagnóstico e tratamento de GBM .
 
 
-# Instalação de packages
-
-```{r}
-BiocManager::install("org.Hs.eg.db")
-BiocManager::install("clusterProfiler")
-```
-
 
 # Import das Librarys
 
 
-```{r, echo=TRUE}
+```{r, echo=TRUE, message=FALSE}
 
 
 library(TCGAbiolinks)
@@ -95,6 +88,7 @@ library(genefilter)
 library(summarytools)
 library(org.Hs.eg.db)
 library(clusterProfiler)
+library(pheatmap)
 ```
 
 # Recolha dos dados: Importação e Carregamento dados de Expressão/Metadados e Verificação do seu conteúdo e dimensão
@@ -102,7 +96,7 @@ library(clusterProfiler)
 
 ## Importação de dados de Expressão/Metadados
 
-```{r, echo=TRUE}
+```{r, echo=TRUE, message=FALSE}
 
 proj = "TCGA-GBM"     
 query = GDCquery(
@@ -117,7 +111,8 @@ GDCdownload(query)
 ```
 
 
-```{r, echo=TRUE}
+```{r, echo=TRUE, message=FALSE}
+
 gbm= GDCprepare(query)
 ```
 
@@ -129,7 +124,7 @@ gbm
 
 ## Importação dados dos Dados clinicos
 
-```{r, echo=TRUE}
+``````{r, echo=TRUE, message=FALSE}
 
 query_clin = GDCquery(project = "TCGA-GBM", 
                   data.category = "Clinical",
@@ -142,7 +137,8 @@ clinical.GBM = GDCprepare(query_clin)
 ```
 
 
-```{r, echo=TRUE}
+```{r, echo=TRUE, message=FALSE}
+
 clinical.GBM
 ```
 
@@ -874,6 +870,7 @@ Portanto, se considerarmos aceitável uma fração de 10% de falsos positivos, p
 
 Existem 13790 genes diferencialmente expressos.
 
+
 ```{r}
 sum(res$padj < 0.1, na.rm=TRUE)
 ```
@@ -918,7 +915,118 @@ with(res[topGene, ], {
 })
 ```
 
+Os gráficos de expressão diferencial mostram (azul) os genes que são diferencialmente expressos (DE), entre as diferentes condições que constam da análise anterior.Para além disso, consta também no gráfico o TopGene referente a cada análise.
+
+
+
+
+### Heatmap IDH_status
+
+```{r}
+
+dea = as.data.frame(res_IDH)
+dea_fc = subset(dea, abs(log2FoldChange) > 1 & padj < 0.05)
+
+
+norm_counts = counts(ddsSE_IDH, normalized=TRUE)[row.names(dea_fc),]
+norm_counts = norm_counts[,0:10]
+norm_counts
+
+
+pheatmap(norm_counts, cluster_rows=TRUE, cluster_cols=TRUE, scale="row", show_rownames=False)
+
+
+```
+
+
+
+
+### Heatmap gender
+
+
+
+```{r}
+dea = as.data.frame(res_sex)
+dea_fc = subset(dea, abs(log2FoldChange) > 1 & padj < 0.05)
+
+
+norm_counts = counts(ddsSE_sex, normalized=TRUE)[row.names(dea_fc),]
+norm_counts = norm_counts[,0:10]
+norm_counts
+
+
+pheatmap(norm_counts, cluster_rows=TRUE, cluster_cols=TRUE, scale="row", show_rownames=FALSE)
+
+
+```
+
+
+
+### Heatmap subtype
+
+
+
+```{r}
+dea = as.data.frame(res)
+dea_fc = subset(dea, abs(log2FoldChange) > 1 & padj < 0.05)
+
+
+norm_counts = counts(ddsSE_subtype, normalized=TRUE)[row.names(dea_fc),]
+norm_counts = norm_counts[,0:10]
+norm_counts
+
+
+pheatmap(norm_counts, cluster_rows=TRUE, cluster_cols=TRUE, scale="row", show_rownames=FALSE)
+```
+
+
+
+**Conclusão** :  O heatmap é um tipo de análise que permite a visualização de diferentes níveis de expressão (sobre e sob expressão) com recurso a cores. Neste caso, selecionamos os 10 primeiros genes a título de exemplo para verificar os seus níveis de expressão.  Quanto mais carregada for a cor -azul para sobre-expressão e vermelho para sob-expressão- mais diferencialmente expresso é o gene.
+
+
+
+
 
 ## Análise de enriquecimento
+
+
+
+### Análise de enriquecimento do IDH_status
+
+
+
+**Sobrexpressão**
+
+
+```{r}
+s = na.omit(res_IDH)
+s = s[s$padj < 0.05,]
+overexp =rownames(s)[s$log2FoldChange>2]
+overexp = gsub("\\..*","",overexp)
+
+result = enrichGO(gene = overexp, OrgDb = 'org.Hs.eg.db', keyType = 'ENSEMBL', ont = 'BP')
+barplot(result)
+```
+
+
+
+**Subexpressão**
+
+
+```{r}
+underexp =rownames(s)[s$log2FoldChange<-2]
+underexp = gsub("\\..*","",underexp)
+
+result1 = enrichGO(gene = underexp, OrgDb = 'org.Hs.eg.db', keyType = 'ENSEMBL', ont = 'BP')
+barplot(result1)
+
+```
+
+
+Os gráficos anteriormente apresentados, demonstram os termos de gene ontology enriquecidos associados ao nosso dataset cada barra representa um termo go que está associado a uma determinada função biológica. Os valores expressos nos gráficos apresentam apenas os genes com valores de prova menores que 0.05 indicando valores sobreexpressos e subexpressos.
+
+
+
+
 
 
