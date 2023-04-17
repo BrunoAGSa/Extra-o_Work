@@ -397,6 +397,7 @@ gender1 = na.omit(gender)
 p_grade1 = na.omit(p_grade)
 p_IDH1 = na.omit(p_IDH)
 vital_st1 = na.omit(vital_st)
+subtype1 = na.omit(subtype)
 
 ```
 
@@ -524,76 +525,46 @@ pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"),
 
 ```
 
+### Análise Exploratõria Variáveis --\> subtype
+
+```{r}
+table=table(subtype1) 
+data=as.data.frame(table)
+slices=data$Freq
+lbls=data$subtype1
+pct=round(slices/sum(slices)*100)
+lbls=paste(lbls, pct) 
+lbls=paste(lbls,"%",sep="") 
+pie(slices,labels = lbls, col = c("gold","darkolivegreen1","navajowhite","coral","purple", "lightblue","yellow", "pink"), main="Estado vital do paciente no momento da coleta de dados") #tirar as que nao tem
+```
 
 
 ###Avaliar a relação entre o género e a idade de diagnótico
 
 De forma a ser possível fazer a análise estatística inerente, é necessário primeiro verificar a normalidade dos dados. Para tal recorremos ao teste de Shapiro-Wilk.
 
-```{r}
-shapiro.test(age_diag)
-``` 
 
 H0 (Hipótese nula): Dados seguem uma distribuição normal.
 H1 (Hipótese alternativa): Dados não seguem uma distribuição normal.
 
+```{r}
+shapiro.test(age_diag)
+``` 
+
 Uma vez que o p-value resultante deste teste é uma valor inferior a 0,05, rejeitamos a hipótese nula e concluimos que esta variável não apresenta uma distribuição normal.
 
-
-
-Decidimos usar O wilcox.test poque este é especialmente útil quando os dados não são normalmente distribuídos.
-
-
 Desta forma, utilizamos o teste Mann-Whitney como uma alternativa não paramétrica para duas amostras independentes.
+
+
+H0 (Hipótese nula): Não há diferenças significativas na idade de diagnóstico devido ao sexo
+H1 (Hipótese alternativa): Há diferenças significativas na idade de diagnóstico devido ao sexo
 
 
 ```{r}
 wilcox.test(age_diag~gender)
 ```
-Uma vez que o p-value é maior que 0,05, não se rejeita a hipótese nula, e concluimos que não existem diferenças nas idades de diagnóstico do cancro entre sexos.
+Conclusão: Como a estatistica é de 3713.5 e o valor-p é maior que 0.05 (p-value = 0.1227), a hipótese nula não é rejeitada portanto, podemos concluir que não existem diferenças nas idades de diagnóstico do cancro entre sexos.
 
-
-**Teste de Levene** 
-
-H0 (Hipótese nula): As variâncias das duas amostras são iguais.
-H1 (Hipótese alternativa): As variâncias das duas amostras são diferentes.
-
-Este teste é realizado para determinar se a suposição de homogeneidade de variância pode ser mantida antes de realizar uma análise de variância (ANOVA) ou teste t-pareado.
-
-```{r}
-leveneTest(age_diag~gender) 
-```
-
-Como a estatística de teste é 0.1562 e o valor-p é 0.6932.
-O valor-p é maior que 0.05, o que indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais.
-Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
-
-**t-test** #cortar?
-
-H0: Não há diferença significativa entre as médias dos grupos masculino e feminino para a variável idade de diagnóstico.
-H1: Há diferenças significativa entre as médias dos grupos masculino e feminino para a variável idade de diagnóstico.
-
-```{r}
-t.test(age_diag ~ gender) #cortar
-```
-
-O resultado do t-teste para duas amostras independentes indica que a estatística t é 1.0938 com um valor de p de 0.2765.
-Como o p-value \> 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag".
-Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
-
-Com base nos resultados do t-teste , não há evidências de que existam diferenças significativas entre as médias dos grupos masculino e feminino na variável "age_diag".
-
-**ANOVA** #cortar?
-
-```{r}
-
-res.aov = aov(age_diag ~ gender)
-
-summary(res.aov)
-```
-
-Uma vez que, a estatística F é 1,27 e o valor de prova 0,261, indica que o efeito do sexo não é estatisticamente significativo a um nível de significância de 0,05.
-Com base nos resultados da ANOVA, não há evidências suficientes para sugerir que o género tenha um efeito significativo na idade de diagnóstico.
 
 **Análise Gráfica: Boxplot Idade aquando do diagnóstico vs Género**
 
@@ -603,110 +574,35 @@ boxplot(age_diag ~ gender, main = "Idade de diagnóstico", xlab = "Género", yla
 Este gráfico confirma visualmente o evidenciado anteriormente, mostrando que não existem diferenças significativas na idade de diagnóstico entre sexos opostos.
 
 
-###Avaliar a relação entre o tipo de tecido e a idade de diagnótico #faz sentido??
-**Teste de Levene**
+###Avaliar a relação entre o subtipo de cancro e número de mutações
 
-H0: As variâncias das duas amostras são iguais.
-H1: As variâncias das duas amostras são diferentes.
-
-Este teste é realizado para determinar se a suposição de homogeneidade de variância pode ser mantida antes de realizar uma análise de variância (ANOVA) ou teste t-pareado.
+H0 (Hipótese nula): Dados seguem uma distribuição normal.
+H1 (Hipótese alternativa): Dados não seguem uma distribuição normal.
 
 ```{r}
-leveneTest(age_diag ~ tissue)
+shapiro.test(mutation)
 ```
+Conclusão: Uma vez que o p-value resultante deste teste é uma valor inferior a 0,05, rejeitamos a hipótese nula e concluimos que esta variável não apresenta uma distribuição normal.
 
-A estatística de teste é 0,0722 e o valor-p é 0.7885, como o p-value \> 0,05, indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais.
-Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
+Uma vez rejeitada a normalidade dos dados, recorremos a um teste não paramétrico. Visto que a variável categórica subtype apresenta mais que dois subníveis utilizamos o teste kruskal-wallis.
 
-**t-test**
 
-Hipótese nula (H0): Não há diferença significativa entre as médias dos diferentes tipos de tecidos afetados para a variável idade.
-Hipótese alternativa (H1): Há diferenças significativa entre as médias dos grupos masculino e feminino para a variável idade.
+H0 (Hipótese nula): Não há diferenças significativas no número de mutações devido aos diferentes subtipos de cancro.
+H1 (Hipótese alternativa): Há diferenças significativas no número de mutações devido aos diferentes subtipos de cancro.
+
 
 ```{r}
-t.test ( tissue ~ age_diag)
+kruskal.test(mutation~subtype)
 ```
+Conclusão: Uma vez que o p-value é maior que 0,05, não se rejeita a hipótese nula, e concluimos que não existem diferenças no número de mutações entre os diferentes subtipos de cancro.
 
-O resultado do t-teste para duas amostras independentes indica que a estatística t é 1.37 com um valor de p de 0.19 Como o p-value \> 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag".
-Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
-
-Com base nos resultados do t-teste , não há evidências de que existam diferenças significativas entre as médias dos diferentes tecidos na variável "age_diag".
-
-**ANOVA**
+**Análise Gráfica: Boxplot de número de mutações com os diferentes subtipos de cancro**
 
 ```{r}
-
-res.aov = aov(age_diag ~ tissue)
-
-summary(res.aov)
+boxplot(mutation ~ subtype, main = "Idade de diagnóstico", xlab = "Subtipo de cancro", ylab = "Nº mutações", at = 1:8)#ver legenda x
 ```
+Este gráfico confirma visualmente o evidenciado anteriormente, mostrando que não existem diferenças significativas no número de mutações devido aos diferentes subtipos de cancro.
 
-Uma vez que, a estatística F é 1,63 e o valor de prova 0,203, indica que o efeito do sexo não é estatisticamente significativo a um nível de significância de 0,05.
-Com base nos resultados da ANOVA, não há evidências suficientes para sugerir que o tipo tenha um efeito significativo na idade de diagnóstico.
-
-**Análise Gráfica: Boxplot Tipo de Tecido vs Idade de Diagnóstico**
-
-```{r}
-boxplot(age_diag ~ tissue, data = meta_gbm, main = "Idade Aquando do Diagnóstico Vs Tipo de Tecido", xlab = "Idade", ylab = "Idade em dias", col = c( "coral", "darkolivegreen1"))
-
-```
-
-A análise ANOVA revelou que não existem diferenças significas entre as médias dos grupos da variável "tissue" para os valores de "age_diag", e isso também ficou comprovado pela análise do boxplot associado.
-
-###Avaliar a relação entre os tipos de tecidos afetados e o tempo entre o diagnóstico e a morte do paciente #faz sentido??
-
-Agora vamos verificar se o tipo de tecido afetado tem alguma implicação no tempo de vida do paciente desde o seu diagnóstico, ou seja na sua mortalidade.
-
-**Teste de Levene**
-
-H0: As variâncias das duas amostras são iguais.
-H1: As variâncias das duas amostras são diferentes.
-
-Este teste é realizado para determinar se a suposição de homogeneidade de variância pode ser mantida antes de realizar uma análise de variância (ANOVA) ou teste t-pareado.
-
-```{r}
-leveneTest(death ~ tissue)
-```
-
-A estatística de teste é 0.0651 e o valor-p é 0.7991, como o p-value \> 0,05, indica que não há evidência suficiente para rejeitar a hipótese nula de que as variâncias das duas amostras são iguais.
-Portanto, podemos concluir que há homogeneidade de variância entre as amostras.
-
-**t-test**
-
-Hipótese nula (H0): Não há diferença significativa entre as médias dos diferentes tipos de tecidos afetados para a variável death.
-Hipótese alternativa (H1): Há diferenças significativa entre as médias dos diferentes tipos de tecidos afetados para a variável death.
-
-```{r}
-t.test (death ~ tissue)
-```
-
-O resultado do t-teste para duas amostras independentes indica que a estatística t é -0.92933 com um valor de p de 0.3686 Como o p-value \> 0.05, **não há evidências suficientes para rejeitar a hipótese nula** de que não há diferença entre as médias dos grupos masculino e feminino na variável "age_diag".
-Além disso, o intervalo de confiança de 95% para a diferença das médias inclui valores negativos e positivos, o que sugere que não há diferença significativa entre os grupos.
-
-Com base nos resultados do t-teste , não há evidências de que existam diferenças significativas entre as médias dos diferentes tecidos na variável "age_diag".
-
-**ANOVA**
-
-```{r}
-
-res.aov = aov(death ~ tissue)
-
-summary(res.aov)
-```
-
-Uma vez que, a estatística F é 0.705 e o valor de prova 0.402, indica que o efeito do sexo não é estatisticamente significativo a um nível de significância de 0,05.
-Com base nos resultados da ANOVA, não há evidências suficientes para sugerir que o tipo tenha um efeito significativo na idade de diagnóstico.
-
-Concluindo, o tipo de tecido em que o cacro foi originado não tem influência significativa na mortalidade dos pacientes com glioblastoma multiforme.
-
-**Análise Gráfica: Boxplot Tipo de Tecido vs Idade de Diagnóstico**
-
-```{r}
-boxplot(death ~ tissue, data = meta_gbm, main = "Mortalidade Vs Tipo de Tecido", xlab = "Idade", ylab = "Idade em dias", col = c( "coral", "darkolivegreen1"))
-
-```
-
-A análise ANOVA revelou que não existem diferenças significas entre as médias dos grupos da variável "tissue" para os valores de "death", e isso também ficou comprovado pela análise do boxplot associado.
 
 ###Avaliar a relação entre os tipos de tipos de tecido e a quantidade de vida do paciente
 ```{r}
