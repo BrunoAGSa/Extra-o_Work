@@ -228,8 +228,6 @@ Através da análise do resumo das variáveis presentes no meta_gbm foram as sel
 
 **meta_GBM\$gender** --\> Representa o género dos pacientes (male, female).
 
-**meta_GBM\$paper_Grade** --\> Representa o grau de malignidade do tumor (G4)
-
 **meta_GBM\$paper_IDH.status** --\> Representa o estado do gene isocitrato desidrogenase (IDH) nas amostras (WT, Mutant)
 
 **meta_GBM\$patient** --\> Representa o ID do Paciente
@@ -289,14 +287,13 @@ race = as.factor(meta_gbm$race)
 age_diag = meta_gbm$age_at_diagnosis
 death = meta_gbm$days_to_death
 gender = as.factor(meta_gbm$gender)
-p_grade = meta_gbm$paper_Grade
 p_IDH = meta_gbm$paper_IDH.status
 patient = meta_gbm$patient
 tissue = as.factor(meta_gbm$definition)
 mutation = meta_gbm$paper_Mutation.Count 
 vital_st = as.factor(meta_gbm$vital_status) 
 death = meta_gbm$days_to_death
-subtype = meta_gbm$paper_Original.Subtype
+subtype = as.factor(meta_gbm$paper_Original.Subtype)
 
 
 ```
@@ -316,10 +313,6 @@ sum(is.na(age_diag))
 
 ```{r}
 sum(is.na(gender))
-```
-
-```{r}
-sum(is.na(p_grade))
 ```
 
 ```{r}
@@ -394,7 +387,6 @@ Relativamente aos dados categóricos, uma vez que, a sua remoção/substituiçã
 ```{r}
 race1 = na.omit(race)
 gender1 = na.omit(gender)
-p_grade1 = na.omit(p_grade)
 p_IDH1 = na.omit(p_IDH)
 vital_st1 = na.omit(vital_st)
 subtype1 = na.omit(subtype)
@@ -440,7 +432,7 @@ hist(age_diag, col = c("lightblue"), main= "Idade em que o paciente foi diagnost
 
 ```{r}
 
-hist(death, col = c("lightblue"), main= "Tempo entre o diagnóstico e a morte do paciente ", xlab = "Dias", ylab = "Número de pessoas", ylim=c(0,100))
+hist(death, col = c("lightblue"), main= "Tempo entre o diagnóstico e a morte do paciente ", xlab = "Dias", ylab = "Número de pessoas", ylim=c(0,150))
 
  
 ```
@@ -604,59 +596,40 @@ boxplot(mutation ~ subtype, main = "Idade de diagnóstico", xlab = "Subtipo de c
 Este gráfico confirma visualmente o evidenciado anteriormente, mostrando que não existem diferenças significativas no número de mutações devido aos diferentes subtipos de cancro.
 
 
-###Avaliar a relação entre os tipos de tipos de tecido e a quantidade de vida do paciente
-```{r}
-
-t_v = table(tissue,vital_st) # tabela cruzada entre as duas variáveis 
-
-```
-
-**Teste Qui-Quadrado**
-
-H0:As variáveis são independentes H1:As variáveis não são independentes
-
-```{r}
-chisq.test(t_v)
-```
-
-Com base na tabela fornecida e no teste qui-quadrado, podemos concluir que existe uma associação significativa entre o tipo de tecido e o estado vital dos pacientes p-value\<0.05.
-Comcluindo a distribuição do estado vital(se está vivo ou morto) não é a mesma em diferentes tipos de tecidos, há mais mortalidade no caso se for Primary solid Tumor.
-Rejeita-se a hipotese nula, as variáveis não são independentes
+textinho
 
 ###Avaliar a relação entre o género do paciente e o tempo entre o diagnóstico e a morte do paciente
 
-```{r}
 
+**Teste Qui-Quadrado**
+
+H0:As variáveis são independentes 
+H1:As variáveis não são independentes
+
+```{r}
 g_v = table(gender,vital_st)
 g_v
-
-```
-
-```{r}
-chisq.test(g_v)
+chisq.test(t_v)
 ```
 
 O teste qui-quadrado com correção de continuidade não mostrou diferenças significativas entre o género e a vitalidade do paciente (X-squared = 1.277, df = 2, p-value = 0.5281).
 
-Com base na tabela fornecida e no teste qui-quadrado, podemos concluir que existe uma associação significativa entre o tipo de tecido e o estado vital dos pacientes p-value\>0.05.
+Com base na tabela fornecida e no teste qui-quadrado, podemos concluir que existe uma associação significativa entre o sexo e o estado vital dos pacientes p-value\>0.05.
 Portanto, não rejeitamos a hipótese nula de que as duas variáveis são independentes.
 
-#Analise univariada () #ja nao esta na tabela??
 
-```{r}
-dim(gbm_assay_scale)
-```
+~
 
 #Análise da Expressão diferencial
 
 A análise de expressão diferencial vai ser realizada usando o pacote DESeq2 do Bioconductor.
 
-## DE - Análise da Espressão Diferencial do. IDH.staus
+## DE - Análise da Espressão Diferencial do IDH.status
 
 ```{r}
 
 
-data_de = gbm[,!is.na(gbm$paper_IDH.status)] #retirar NA
+data_de = gbm[,!is.na(gbm$paper_IDH.status)] 
 
 ddsSE_IDH = DESeqDataSet(data_de, design = ~ paper_IDH.status)
 
@@ -669,10 +642,8 @@ ddsSE_IDH = DESeq(ddsSE_IDH)
 resultsNames(ddsSE_IDH)
 
 res_IDH = results(ddsSE_IDH, name = "paper_IDH.status_WT_vs_Mutant")
-dea = as.data.frame(res_IDH)
 
 summary(res_IDH)
-
 
 ```
 
@@ -691,11 +662,10 @@ Existem 6285 genes significativos.
 ```{r}
 sum(res_IDH$padj < 0.1, na.rm=TRUE)
 
-#6276
 ```
 
 Portanto, se considerarmos aceitável uma fração de 5% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 5% como significativos.
-Existem 4640 genes significativos.
+Existem 4641 genes significativos.
 
 ```{r}
 sum(res_IDH$padj < 0.05, na.rm=TRUE)
@@ -711,8 +681,6 @@ head(resSig[ order(resSig$log2FoldChange), ])
 ...e com a regulação positiva mais forte:
 
 ```{r}
-
-
 head(resSig[ order(resSig$log2FoldChange, decreasing = TRUE), ])
 ```
 
@@ -721,8 +689,9 @@ head(resSig[ order(resSig$log2FoldChange, decreasing = TRUE), ])
 E podemos observar também o TopGene que corresponde ao gene com menor valor de padj
 
 ```{r}
-topGene = rownames(res_IDH)[which.min(res_IDH$padj)]
+topGene = rownames(res_IDH)[which.min(res_IDH$padj)]   
 topGene
+plotCounts(ddsSE_IDH, gene = topGene, intgroup=c("paper_IDH_status"))
 ```
 
 **Exploração gráfica: MA Plot**
@@ -731,6 +700,7 @@ Este vai nos permitir para visualizar as diferenças de expressão génica entre
 E podemos observar também o TopGene que corresponde ao gene com menor valor de padj
 
 ```{r}
+
 DESeq2::plotMA(res_IDH, ylim = c(-7,7))
 
 with(res_IDH[topGene, ], {
@@ -741,9 +711,8 @@ with(res_IDH[topGene, ], {
 ```
 
 Um gráfico de diagnóstico que também é útil é o histograma dos valores de p (figura abaixo).
-Este gráfico é melhor formado excluindo genes com contagens muito pequenas, que de outra forma geram picos no histograma. #nao percebemos bem
+Este gráfico é melhor formado excluindo genes com contagens muito pequenas, que de outra forma geram picos no histograma. 
 
-**Normalização**
 
 ```{r}
 hist(res_IDH$pvalue[res_IDH$baseMean > 1], breaks = 0:20/20,
@@ -764,36 +733,35 @@ ddsSE_sex = DESeq(ddsSE_sex)
 resultsNames(ddsSE_sex)
 
 res_sex = results(ddsSE_sex, name = "paper_Gender_male_vs_female")
-dea = as.data.frame(res_sex)
+
 summary(res_sex)
 ```
 
-A análise da Expressão Diferencial foi feita no subconjunto dos dados TCGA-GBM RNA-seq, onde as amostras com valores ausentes para a variável 'paper_Gender' foram removidos e os dados de expressão foram filtrados para manter apenas os genes com pelo menos 10 contagens em todas as amostras e assim permitir-nos filtrar as linhas da matriz (counts) que possuem baixos niveis de expressão em todas as amostras.
+A análise da Expressão Diferencial foi feita no subconjunto dos dados TCGA-GBM RNA-seq, onde as amostras com valores ausentes para a variável 'paper_Gender' foram removidos e os dados de expressão foram filtrados para manter apenas os genes com pelo menos 10 contagens em todas as amostras e assim permitir-nos filtrar as linhas da matriz (counts) que possuem baixos níveis de expressão em todas as amostras.
 
-O resumo (summary(res)) mostra que dos 48091 genes analisados, 210 (0.44%) foram up-regulated(Log2 fold change \> 0) nas amostras com status de tipo selvagem de IDH em comparação com aquelas com status de mutante de IDH.
+O resumo (summary(res)) mostra que dos 48091 genes analisados, 210 (0.44%) foram up-regulated(Log2 fold change \> 0) nas amostras de tipo WT de IDH em comparação com de mutante de IDH.
 Por outro lado, 115 (0.24%) genes foram down-regulated (Log2 fold change \< 0) na mesma comparação.
 
 Também podemos analisar que não houve outliers detetados nos dados e 13.057 genes (27%) tiveram contagens baixas (contagem média \< 1), que não foram usados na análise.
-Finalmente, o ponto de corte do valor de prova ajustado usado para determinar a significância foi menor que 0,1.
 
 Portanto, se considerarmos aceitável uma fração de 10% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 10% = 0,1 como significativos.
-Existem 325 genes significativos.
+
+Existem 325 genes diferencialmente expressos.
 
 ```{r}
 
 sum(res_sex$padj < 0.1, na.rm=TRUE)
 
-#325
 ```
 
 Portanto, se considerarmos aceitável uma fração de 5% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 5% como significativos.
-Existem 226 genes significativos.
+Existindo, neste caso, 226 genes significativamente expressos.
 
 ```{r}
 sum(res_sex$padj < 0.05, na.rm=TRUE)
 ```
 
-Subdefinimos a tabela de resultados para esses genes e, em seguida, classificamos pela estimativa de mudança de dobra de log2 para obter os genes significativos com a regulação negativa mais forte:
+Subdefinimos a tabela de resultados para esses genes e, em seguida, classificamos pela estimativa de fold change log2 para obter os genes significativos com a regulação negativa mais forte:
 
 ```{r}
 resSig <- subset(res_sex, padj < 0.1)
@@ -803,10 +771,7 @@ head(resSig[ order(resSig$log2FoldChange), ])
 ...e com a regulação positiva mais forte:
 
 ```{r}
-
-
 head(resSig[ order(resSig$log2FoldChange, decreasing = TRUE), ])
-
 ```
 
 Vamos ver o plot do gene que apresentou o menor valor de prova ajustado (padj), na comparação entre os grupos "male" e "female" do metadado "paper_Gender".
@@ -816,10 +781,12 @@ topGene = rownames(res_sex)[which.min(res_sex$padj)]
 topGene
 plotCounts(ddsSE_sex, gene = topGene, intgroup=c("paper_Gender"))
 ```
+Pela análise do gráfico, observamos que existe uma diferença dos níveis de expressão do topGene em sexos diferentes. O sexo masculino apresenta níveis de expressão maiores quando comparado com o sexo feminino. Ainda assim, não é possível concluir que há diferenças estatisticamente significativas até à realização de testes estatísticos adequados.
+
 
 **Exploração gráfica: MA Plot**
 
-Exploração Gráfica: De seguida vamos analisar o gráfico MA, para visualizar as diferenças de expressão génica entre dois grupos.Genes Diferencialmente Expressos(azul), Outros Genes (Cinza) e adicionámos também o TopGene ao Gráfico.
+Exploração Gráfica: De seguida vamos analisar o gráfico MA, para visualizar as diferenças de expressão génica entre dois grupos. Genes Diferencialmente Expressos(azul), Outros Genes (Cinza) e adicionámos também o TopGene ao Gráfico.
 
 ```{r}
 
@@ -831,24 +798,19 @@ with(res_sex[topGene, ], {
 })
 ```
 
-**Normalização**
+
 
 ```{r}
 hist(res_sex$pvalue[res_sex$baseMean > 1], breaks = 0:20/20,
      col = "grey50", border = "white", main=' Contagem média normalizada maior que 1', ylim=c(0,3500))
 ```
 
-## DE - Estatistica descritiva Subtype #deverá estar em cima?
 
-```{r}
 
-gbm$paper_Original.Subtype
 
-a = as.factor(gbm$paper_Original.Subtype)
+## DE - Diferencial Expression - Subtype
 
-qplot(gbm$paper_Original.Subtype, fill=a)
 
-```
 
 ```{r}
 data_de = gbm[,!is.na(gbm$paper_Original.Subtype)]
@@ -861,55 +823,60 @@ ddsSE_subtype = DESeq(ddsSE_subtype)
 
 resultsNames(ddsSE_subtype)
 
-res = results(ddsSE_subtype, name = "paper_Original.Subtype_G.CIMP_vs_Classical")
-dea = as.data.frame(res)
+res = results(ddsSE_subtype, name = "paper_Original.Subtype_Mesenchymal_vs_Classical")
+
 summary(res)
-a = DESeq2::plotMA(res, ylim = c(-7,7), main="paper_Original.Subtype_G.CIMP_vs_Classical")
+```
+A análise da Expressão Diferencial foi feita no subconjunto dos dados TCGA-GBM RNA-seq, onde as amostras com valores ausentes para a variável 'paper_Original.Subtype_Mesenchymal_vs_Classical' foram removidos e os dados de expressão foram filtrados para manter apenas os genes com pelo menos 10 contagens em todas as amostras e assim permitir-nos filtrar as linhas da matriz (counts) que possuem baixos níveis de expressão em todas as amostras.
+
+O resumo (summary(res)) mostra que dos 48040 genes analisados, 8305 (17%) foram up-regulated(Log2 fold change \> 0). Por outro lado, 5485 (11%) genes foram down-regulated (Log2 fold change \< 0) na mesma comparação.
+
+Também podemos analisar que não houve outliers detetados nos dados e 9316 genes (19%) tiveram contagens baixas (contagem média \< 1), que não foram usadas na análise.
+
+Portanto, se considerarmos aceitável uma fração de 10% de falsos positivos, podemos considerar todos os genes com valor de p ajustado abaixo de 10% = 0,1 como significativos.
+
+Existem 13790 genes diferencialmente expressos.
+
+
+
+```{r}
+sum(res$padj < 0.1, na.rm=TRUE)
+```
+
+
+```{r}
+sum(res$padj < 11157, na.rm=TRUE)
 ```
 
 ```{r}
-res = results(ddsSE_subtype, name = "paper_Original.Subtype_Mesenchymal_vs_Classical")
-dea = as.data.frame(res)
-summary(res)
+resSig <- subset(res, padj < 0.1)
+head(resSig[ order(resSig$log2FoldChange), ])
+```
+```{r}
+head(resSig[ order(resSig$log2FoldChange, decreasing = TRUE), ])
+```
+```{r}
+topGene = rownames(res)[which.min(res$padj)]
+topGene
+plotCounts(ddsSE_subtype, gene = topGene, intgroup=c("paper_Original.Subtype"))
+```
+
+
+```{r}
 
 DESeq2::plotMA(res, ylim = c(-7,7),main="paper_Original.Subtype_Mesenchymal_vs_Classical")
-topGene = rownames(res)[which.min(res$padj)]
+
 with(res[topGene, ], {
-  points(baseMean, log2FoldChange, col="dodgerblue", cex=2, lwd=2)
-  text(baseMean, log2FoldChange, topGene, pos=2, col="dodgerblue")
-})
-```
-
-```{r}
-res = results(ddsSE_subtype, name = "paper_Original.Subtype_Neural_vs_Classical")
-dea = as.data.frame(res)
-summary(res)
-
-
-DESeq2::plotMA(res, ylim = c(-7,7),main="paper_Original.Subtype_Neural_vs_Classical")
-topGene <- rownames(res)[which.min(res$padj)]
-with(res[topGene, ], {
-  points(baseMean, log2FoldChange, col="dodgerblue", cex=2, lwd=2)
-  text(baseMean, log2FoldChange, topGene, pos=2, col="dodgerblue")
-})
-```
-
-```{r}
-res = results(ddsSE_subtype, name = "paper_Original.Subtype_Proneural_vs_Classical")
-dea = as.data.frame(res)
-summary(res)
-
-
-DESeq2::plotMA(res, ylim = c(-7,7),main="paper_Original.Subtype_Neural_vs_Classical")
-topGene <- rownames(res)[which.min(res$padj)]
-with(res[topGene, ], {
-  points(baseMean, log2FoldChange, col="dodgerblue", cex=2, lwd=2)
-  text(baseMean, log2FoldChange, topGene, pos=2, col="dodgerblue")
+  points(baseMean, log2FoldChange, col="black", cex=2, lwd=2)
+  text(baseMean, log2FoldChange, topGene, pos=2, col="black")
 })
 
-
-
 ```
+
+
+
+
+
 
 ```{r}
 ## dados clinicos
