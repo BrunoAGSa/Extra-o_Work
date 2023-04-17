@@ -22,7 +22,6 @@ editor_options:
 <center>![](logo.jpg)</center>
 
 ```{r setup, include=FALSE}
-
 knitr::opts_chunk$set(echo = TRUE)
 
 ```
@@ -69,17 +68,12 @@ Além disso, esses dados poderão ser usados para desenvolver novas terapias, id
 
 # Instalação de packages
 
-```{r,echo=FALSE}
-#install.packages("car") 
-#install.packages("summarytools")
-#install.packages("RegEnrich")
-#install.packages("Rtools")
-```
+
 
 # Import das Librarys
 
 
-```{r,echo=FALSE}
+```{r}
 
 
 library(TCGAbiolinks)
@@ -95,9 +89,6 @@ library(RColorBrewer)
 library(car)
 library(genefilter)
 library(summarytools)
-#library(RegEnrich)
-
-
 ```
 
 # Recolha dos dados: Importação e Carregamento dados de Expressão/Metadados e Verificação do seu conteúdo e dimensão
@@ -105,7 +96,8 @@ library(summarytools)
 
 ## Importação de dados de Expressão/Metadados
 
-```{r, echo = FALSE}
+```{r}
+
 proj = "TCGA-GBM"     
 query = GDCquery(
   project = proj,
@@ -119,9 +111,10 @@ GDCdownload(query)
 ```
 
 
-```{r, echo=FALSE}
+```{r}
 gbm= GDCprepare(query)
 ```
+
 
 ```{r}
 gbm
@@ -130,7 +123,8 @@ gbm
 
 ## Importação dados dos Dados clinicos
 
-```{r,echo=FALSE}
+```{r}
+
 query_clin = GDCquery(project = "TCGA-GBM", 
                   data.category = "Clinical",
                   data.type = "Clinical Supplement", 
@@ -428,7 +422,7 @@ pie(slices,labels = lbls, col = c("darkslategray1", "coral", "darkolivegreen1", 
 ```
 
 
-## Análise Exploratõria Variáveis --\> age_diag
+## Análise Exploratória Variáveis --\> age_diag
 
 ```{r}
 
@@ -448,7 +442,7 @@ hist(death, col = c("lightblue"), main= "Tempo entre o diagnóstico e a morte do
  
 ```
 
-## Análise Exploratõria Variáveis --\> gender
+## Análise Exploratória Variáveis --\> gender
 
 ```{r}
 
@@ -463,7 +457,7 @@ pie(slices,labels = lbls, col = c("pink", "lightblue"), main="Género")
 ```
 
 
-## Análise Exploratõria Variáveis --\> p_IDH
+## Análise Exploratória Variáveis --\> p_IDH
 
 ```{r}
 
@@ -529,7 +523,7 @@ pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"),
 
 ```
 
-## Análise Exploratõria Variáveis --\> subtype
+## Análise Exploratória Variáveis --\> subtype
 
 ```{r}
 table=table(subtype1) 
@@ -747,7 +741,7 @@ hist(res_IDH$pvalue[res_IDH$baseMean > 1], breaks = 0:20/20,
 ```
 
 
-## Análise da Espressão Diferencial do Género
+## Análise da Expressão Diferencial do Género
 
 
 ```{r}
@@ -842,7 +836,7 @@ hist(res_sex$pvalue[res_sex$baseMean > 1], breaks = 0:20/20,
 
 
 
-## DE - Diferencial Expression - Subtype
+##  Análise da Expressão Diferencial do Subtype
 
 
 
@@ -861,6 +855,8 @@ res = results(ddsSE_subtype, name = "paper_Original.Subtype_Mesenchymal_vs_Class
 
 summary(res)
 ```
+
+
 A análise da Expressão Diferencial foi feita no subconjunto dos dados TCGA-GBM RNA-seq, onde as amostras com valores ausentes para a variável 'paper_Original.Subtype_Mesenchymal_vs_Classical' foram removidos e os dados de expressão foram filtrados para manter apenas os genes com pelo menos 10 contagens em todas as amostras e assim permitir-nos filtrar as linhas da matriz (counts) que possuem baixos níveis de expressão em todas as amostras.
 
 O resumo (summary(res)) mostra que dos 48040 genes analisados, 8305 (17%) foram up-regulated(Log2 fold change \> 0). Por outro lado, 5485 (11%) genes foram down-regulated (Log2 fold change \< 0) na mesma comparação.
