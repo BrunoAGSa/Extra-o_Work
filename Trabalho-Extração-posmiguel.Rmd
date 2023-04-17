@@ -140,6 +140,7 @@ clinical.GBM
 gbm
 ```
 
+
 **Visualização dos dados presentes na assay**
 
 ```{r}
@@ -169,20 +170,30 @@ A partir desta análise percebemos que o data_rna_GBM tem 60660 linhas (que corr
 ## Matrizes counts
 
 ```{r}
-gbm_assay <- round(assays(gbm)[["unstranded"]])
+gbm_assay = round(assays(gbm)[["unstranded"]])
 
 gbm_assay
 ```
 
-##Sumarização dos dados
+
+
+
+# Estatistica univariada
+
+
+## Sumarização dos dados
 
 ```{r}
-dfSummary(gbm_assay)
+print(dfSummary(gbm_assay, style = 'grid', graph.magnif = 1, valid.col = FALSE,
+                max.distinct.values = 5, col.widths = c(100, 200, 200, 350, 500, 250),
+                dfSummary.silent  = TRUE, headings = FALSE, justify = 'l')
+      , method = 'render', max.tbl.height = 500)
 ```
 
 ```{r}
 round( colSums(gbm_assay) / 1e6, 1 )  #(o segundo argumento de round informa quantos pontos decimais devem ser mantidos, ou seja queremos só 1 casa decimal). 
 ```
+
 
 #Dimensão e classe do objeto (gbm_assay)
 
@@ -199,20 +210,17 @@ class(gbm_assay)
 A partir desta análise percebemos que o gbm tem 60660 linhas (que correspondem a genes) e 175 colunas (que correspondem a amostras), para além disso, é um objeto da classe RangedSummarizedExperiment, mais especificamente o essay, que faz parte do pacote SummarizedExperiment.
 Esta matriz contém as contagens brutas da expressão genética para cada amostra.
 
-```{r}
-sum(is.na(gbm_assay)) #Após uma análise do dataset data_rna_GBM_assay, verificamos que não há presença de valores omissos (NA).
 
-gbm_assay_scale = scale(gbm_assay)   # Standardização 
-gbm_assay_scale # NOTAAAAAAAAAAAAA
+
+**Normalização**
 
 
 
 
-```
+###Descrição das Variáveis presentes nos metadados
 
-##Preparação dos metadados
+Através da análise do resumo das variáveis presentes no meta_gbm foram as selecionadas as colunas que correspondem aos metadados que consideramos mais pertinentes, nomeadamente: 
 
-Selecionamos as colunas que correspondem aos metadados que consideramos mais pertinentes:
 
 **meta_GBM\$race** --\> Representa a raça de cada paciente (white, black or african american).
 
@@ -231,6 +239,10 @@ Selecionamos as colunas que correspondem aos metadados que consideramos mais per
 **meta_GBM\$paper_Mutation.Count** --\> Representa o número de mutações identificadas no genoma do paciente.
 
 **meta_GBM\$vital_status** --\> Dados que indicam se o paciente está vivo ou morto no momento da coleta de dados
+
+**meta_GBM\$paper_Original.Subtype**  --\> Diferentes tipos de mutação (Classical, G-CIMP ,IDHmut-codel, IDHmut-non-codel, IDHwt Mesenchymal, Neural, Proneural)
+
+
 
 
 ### Meta_GBM (colData)
@@ -262,39 +274,20 @@ print(dfSummary(meta_gbm, style = 'grid', graph.magnif = 1, valid.col = FALSE,
       , method = 'render', max.tbl.height = 500)
 ```
 
-###Descrição das Variáveis presentes nos metadados
-
-Através da análise do resumo das variáveis presentes no meta_gbm foram as selecionadas as colunas que correspondem aos metadados que consideramos mais pertinentes, nomeadamente: 
-
-**meta_gbm\$race** --\> Representa a raça de cada paciente (white, black or african american).
-
-**meta_gbm\$age_at_diagnosis** --\> Representa a idade, em dias, que o paciente foi diagnosticado.
-
-**meta_gbm\$gender** --\> Representa o género dos pacientes (male, female).
-
-**meta_gbm\$paper_IDH.status** --\> Representa o estado do gene isocitrato desidrogenase (IDH) nas amostras (WT, Mutant)
-
-**meta_gbm\$patient** --\> Representa o ID do Paciente
-
-**meta_gbm\$definition** --\> Representa o tipo de amostra de tecido recolhida (Primary solid Tumor, Recurrent Solid Tumor, Solid Tissue Normal)
-
-**meta_gbm\$paper_Mutation.Count** --\> Representa o número de mutações identificadas no genoma do paciente.
-
-**meta_gbm\$vital_status** --\> Dados que indicam se o paciente está vivo ou morto no momento da coleta de dados.
 
 ###Curadoria 
 
 A curadoria manual consistiu em verificar as variáveis identificadas e certificar que estavam nos formatos apropriados para a análise estatística.
-Durante esse processo, foi identificado que várias variáveis estavam em formato de texto (character), o que impossibilitava a sua utilização em análises estatísticas diretas.
-Para resolver esse problema, as variáveis foram fatorizadas, ou seja, transformadas em variáveis numéricas que representam cada categoria (ou nível) presente na variável original. 
-Isso permitiu que essas variáveis fossem utilizadas na análise estatística de forma apropriada.
-Isto permitiu maior qualidade e confiabilidade dos resultados obtidos na análise de dados. #ter #cuidado, ver
+Durante esse processo, foi identificado que várias variáveis estavam em formato de texto (character), o que impossibilitava a sua utilização em análises estatísticas diretas. Isto permitiu que essas variáveis fossem utilizadas na análise estatística de forma apropriada, possibilitando também maior qualidade e confiabilidade dos resultados obtidos na análise de dados.
+
+Através da análise do resumo das variáveis presentes no meta_gbm foram as selecionadas as colunas que correspondem aos metadados que consideramos mais pertinentes, nomeadamente: 
+
 
 ```{r}
 
 race = as.factor(meta_gbm$race) 
 age_diag = meta_gbm$age_at_diagnosis
-death=meta_gbm$days_to_death
+death = meta_gbm$days_to_death
 gender = as.factor(meta_gbm$gender)
 p_grade = meta_gbm$paper_Grade
 p_IDH = meta_gbm$paper_IDH.status
@@ -303,9 +296,13 @@ tissue = as.factor(meta_gbm$definition)
 mutation = meta_gbm$paper_Mutation.Count 
 vital_st = as.factor(meta_gbm$vital_status) 
 death = meta_gbm$days_to_death
+subtype = meta_gbm$paper_Original.Subtype
+
+
 ```
 
 ## Pré-processamento dos dados
+
 
 ### Tratamento dos valores que estão omissos (NA)
 
@@ -354,36 +351,70 @@ sum(is.na(death))
 
 ```
 
+
+
 Após uma análise dos datasets fornecidos, verificamos que existem valores omissos (NA) nas variáveis que pertendemos analisar.
 
 O grande problema de existirem NA nestas variáveis é o facto de afetar a análise a jusante, uma vez que nas análises estatísticas subsequentes existem métodos que não permitem a inclusão de NA´s, por isso decidimos omiti-los podendo mais tarde recuperar as variáveis com os NA presentes.
 
-**Eliminação dos NA**
+
+
+**Eliminação dos NA: Variáveis Númericas**
+
+Para o processamento dos dados das variáveis numéricas decidimos fazer a substituição dos valores dos NA pela média dos valores da variável, evitanto a perda de informação e possibilitando a precisão das análises estatísticas.
+
 
 ```{r}
-race = na.omit(race)
-age_diag = na.omit(age_diag)
-gender = na.omit(gender)
-p_grade = na.omit(p_grade)
-p_IDH = na.omit(p_IDH)
-mutation = na.omit(mutation)
-vital_st = na.omit(vital_st)
-death = na.omit(death)
+mean_age_diag <- mean(age_diag, na.rm = TRUE)
+
+age_diag <- ifelse(is.na(age_diag), mean_age_diag, age_diag)
 ```
+
+
+```{r}
+mean_death <- mean(death, na.rm = TRUE)
+
+death <- ifelse(is.na(death), mean_death, death)
+
+```
+
+```{r}
+mean_mutation = mean(mutation, na.rm = TRUE)
+
+mutation = ifelse(is.na(mutation), mean_mutation, mutation)
+mutation
+```
+
+**Eliminação dos NA: Variáveis Categóricas**
+
+
+Relativamente aos dados categóricos, uma vez que, a sua remoção/substituição não é adequada para a análise estatística decidimos apenas remover estes valores para a análise gráfica.Deixando os dados intactos para análise posterior.
+
+
+```{r}
+race1 = na.omit(race)
+gender1 = na.omit(gender)
+p_grade1 = na.omit(p_grade)
+p_IDH1 = na.omit(p_IDH)
+vital_st1 = na.omit(vital_st)
+
+```
+
+
+
 
 ##Gráficos de Apoio á Sumarização
 
+
 ### Análise/Visualização Gráfica Exploratõria Variáveis --\> race
+
 
 ```{r}
 
-qplot(race,fill=race, main="Race")
-
-
-table=table(race)
+table=table(race1)
 data=as.data.frame(table)
 slices=data$Freq 
-lbls=data$race
+lbls=data$race1
 pct=round(slices/sum(slices)*100)
 lbls=paste(lbls, pct) 
 lbls=paste(lbls,"%",sep="") 
@@ -392,20 +423,23 @@ pie(slices,labels = lbls, col = c("darkslategray1", "coral", "darkolivegreen1", 
 
 ```
 
+
 ### Análise Exploratõria Variáveis --\> age_diag
 
 ```{r}
 
-hist(age_diag, col = c("lightblue"), main= "Idade em que o paciente foi diagnosticado", xlab = "Idade (dias)", ylab = "Frequência")
+hist(age_diag, col = c("lightblue"), main= "Idade em que o paciente foi diagnosticado", xlab = "Idade (dias)", ylab = "Número de pessoas", ylim = c(0,45))
 
  
 ```
 
-### Análise Exploratõria Variáveis --\> death
+
+### Análise Exploratória Variáveis --\> death
+
 
 ```{r}
 
-hist(death, col = c("lightblue"), main= "Tempo entre o diagnóstico e a morte do paciente ", xlab = "Dias", ylab = "Frequência", ylim=c(0,100))
+hist(death, col = c("lightblue"), main= "Tempo entre o diagnóstico e a morte do paciente ", xlab = "Dias", ylab = "Número de pessoas", ylim=c(0,100))
 
  
 ```
@@ -413,31 +447,30 @@ hist(death, col = c("lightblue"), main= "Tempo entre o diagnóstico e a morte do
 ### Análise Exploratõria Variáveis --\> gender
 
 ```{r}
-qplot(gender, fill= gender, ylim=c(0,115), ylab = "Nº de pessoas" ) 
 
-table=table(gender)
+table=table(gender1)
 data=as.data.frame(table)
 slices=data$Freq
-lbls=data$gender
+lbls=data$gender1
 pct=round(slices/sum(slices)*100)
 lbls=paste(lbls, pct) 
 lbls=paste(lbls,"%",sep="") 
 pie(slices,labels = lbls, col = c("pink", "lightblue"), main="Género")
 ```
 
+
 ### Análise Exploratõria Variáveis --\> p_IDH
 
 ```{r}
-qplot(p_IDH, fill=p_IDH, main="                       Estado do gene IDH nas amostras")  #esta assim para centrar titulo, nao apagar ESPAÇOS
 
-table=table(p_IDH)
+table=table(p_IDH1)
 data=as.data.frame(table)
 slices=data$Freq
-lbls=data$p_IDH
+lbls=data$p_IDH1
 pct=round(slices/sum(slices)*100)
 lbls=paste(lbls, pct) 
 lbls=paste(lbls,"%",sep="") 
-pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1"), main="Estado do gene isocitrato desidrogenase (IDH) nas amostras") 
+pie(slices,labels = lbls, col = c("darkolivegreen1","lightblue"), main="                      Estado do gene IDH nas amostras") 
 
 ```
 
@@ -450,13 +483,11 @@ qplot(patient)
 
 Problema: Existem casos em que varios pacientes tem o mesmo ID!??
 
+
+
 ### Análise Exploratória Variáveis --\> tissue
 
 ```{r}
-
-qplot(tissue, fill=tissue, main="                        Tipo de tecido") 
-
-
 
 table=table(tissue)
 data=as.data.frame(table)
@@ -469,27 +500,23 @@ pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"),
 
 ```
 
+
+
 ### Análise Exploratória Variáveis --\> mutation
 
 ```{r}
 
-qplot(mutation) #Escolher
-
 hist(mutation, col = "darkolivegreen1", main = "Número de mutações identificadas no genoma do paciente.")
-
-boxplot(mutation,main = "Número de mutações identificadas no genoma do paciente.", ylab= "Nº de Mutações", col= "darkolivegreen1")
 
 ```
 
 ### Análise Exploratõria Variáveis --\> vital_st
 
 ```{r}
-qplot(vital_st, fill= vital_st, main="            Estado vital do paciente")
-
-table=table(vital_st) 
+table=table(vital_st1) 
 data=as.data.frame(table)
 slices=data$Freq
-lbls=data$vital_st
+lbls=data$vital_st1
 pct=round(slices/sum(slices)*100)
 lbls=paste(lbls, pct) 
 lbls=paste(lbls,"%",sep="") 
@@ -497,19 +524,28 @@ pie(slices,labels = lbls, col = c("lightblue","darkolivegreen1", "navajowhite"),
 
 ```
 
+
+
 ###Avaliar a relação entre o género e a idade de diagnótico
 
 De forma a ser possível fazer a análise estatística inerente, é necessário primeiro verificar a normalidade dos dados. Para tal recorremos ao teste de Shapiro-Wilk.
+
 ```{r}
 shapiro.test(age_diag)
 ``` 
+
 H0 (Hipótese nula): Dados seguem uma distribuição normal.
 H1 (Hipótese alternativa): Dados não seguem uma distribuição normal.
 
 Uma vez que o p-value resultante deste teste é uma valor inferior a 0,05, rejeitamos a hipótese nula e concluimos que esta variável não apresenta uma distribuição normal.
 
-#dizer o porquê de escolhermos o wilcox? nao sei se faz sentido
+
+
+Decidimos usar O wilcox.test poque este é especialmente útil quando os dados não são normalmente distribuídos.
+
+
 Desta forma, utilizamos o teste Mann-Whitney como uma alternativa não paramétrica para duas amostras independentes.
+
 
 ```{r}
 wilcox.test(age_diag~gender)
@@ -517,7 +553,7 @@ wilcox.test(age_diag~gender)
 Uma vez que o p-value é maior que 0,05, não se rejeita a hipótese nula, e concluimos que não existem diferenças nas idades de diagnóstico do cancro entre sexos.
 
 
-**Teste de Levene** #cortar?
+**Teste de Levene** 
 
 H0 (Hipótese nula): As variâncias das duas amostras são iguais.
 H1 (Hipótese alternativa): As variâncias das duas amostras são diferentes.
