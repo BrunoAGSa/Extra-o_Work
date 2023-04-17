@@ -68,12 +68,16 @@ Além disso, esses dados poderão ser usados para desenvolver novas terapias, id
 
 # Instalação de packages
 
+```{r}
+BiocManager::install("org.Hs.eg.db")
+BiocManager::install("clusterProfiler")
+```
 
 
 # Import das Librarys
 
 
-```{r}
+```{r, echo=TRUE}
 
 
 library(TCGAbiolinks)
@@ -89,6 +93,8 @@ library(RColorBrewer)
 library(car)
 library(genefilter)
 library(summarytools)
+library(org.Hs.eg.db)
+library(clusterProfiler)
 ```
 
 # Recolha dos dados: Importação e Carregamento dados de Expressão/Metadados e Verificação do seu conteúdo e dimensão
@@ -96,7 +102,7 @@ library(summarytools)
 
 ## Importação de dados de Expressão/Metadados
 
-```{r}
+```{r, echo=TRUE}
 
 proj = "TCGA-GBM"     
 query = GDCquery(
@@ -111,7 +117,7 @@ GDCdownload(query)
 ```
 
 
-```{r}
+```{r, echo=TRUE}
 gbm= GDCprepare(query)
 ```
 
@@ -123,7 +129,7 @@ gbm
 
 ## Importação dados dos Dados clinicos
 
-```{r}
+```{r, echo=TRUE}
 
 query_clin = GDCquery(project = "TCGA-GBM", 
                   data.category = "Clinical",
@@ -136,7 +142,7 @@ clinical.GBM = GDCprepare(query_clin)
 ```
 
 
-```{r}
+```{r, echo=TRUE}
 clinical.GBM
 ```
 
