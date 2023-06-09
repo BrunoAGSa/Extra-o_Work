@@ -1036,15 +1036,14 @@ rtsne_res = Rtsne(assay(ddsSE_IDH))
 ```
 
 ```{r}
-plot(rtsne_res$Y, col = ddsSE_IDH$paper_IDH.status
+plot(rtsne_res$Y, col = ddsSE_IDH$paper_IDH.status)
 ```
 
 
 #clustering
 
 ```{r}
-install.packages("genefilter")
-library(genefilter)
+#library(genefilter)
 topgenes = rowttests(as.matrix(assay(ddsSE_IDH)))
 rank_topgenes = order(topgenes$p.value)
 genes = rank_topgenes[1:20]
@@ -1071,12 +1070,9 @@ clustering_hier11 = hclust(dis_eucl, method = "average")
 plot(clustering_hier11)
 ```
 
-```{r}
-#meter transposta?
-```
 
 ```{r}
-fviz_nbclust(as.matrix(assay(ddsSE_IDH),kmeans, method = "silhouette"))
+
 ```
 
 ```{r}
