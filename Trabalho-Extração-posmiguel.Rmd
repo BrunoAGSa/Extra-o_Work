@@ -28,8 +28,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{css, echo=FALSE}
 .scroll {
-  max-height: 300px;
-  overflow-y: auto;
+max-height: 300px;
+overflow-y: auto;
 }
 ```
 
@@ -37,9 +37,9 @@ knitr::opts_chunk$set(echo = TRUE)
 <style>
 body {text-align: justify}
 div.fontdoc {font-family: georgia;}
-    body .main-container {
-        max-width: 1750px;
-    }
+body .main-container {
+max-width: 1750px;
+}
 </style>
 ```
 <div class = "fontdoc">
@@ -104,7 +104,7 @@ query = GDCquery(
   data.category = "Transcriptome Profiling", 
   data.type = "Gene Expression Quantification",
   workflow.type = "STAR - Counts"
-  )
+)
 
 
 GDCdownload(query)
@@ -127,9 +127,9 @@ gbm
 ``````{r, echo=TRUE, message=FALSE}
 
 query_clin = GDCquery(project = "TCGA-GBM", 
-                  data.category = "Clinical",
-                  data.type = "Clinical Supplement", 
-                  data.format = "BCR Biotab")
+                      data.category = "Clinical",
+                      data.type = "Clinical Supplement", 
+                      data.format = "BCR Biotab")
 
 GDCdownload(query_clin)
 
@@ -419,7 +419,7 @@ pct=round(slices/sum(slices)*100)
 lbls=paste(lbls, pct) 
 lbls=paste(lbls,"%",sep="") 
 pie(slices,labels = lbls, col = c("darkslategray1", "coral", "darkolivegreen1", "navajowhite"),
-   main="Race")
+    main="Race")
 
 ```
 
@@ -430,7 +430,7 @@ pie(slices,labels = lbls, col = c("darkslategray1", "coral", "darkolivegreen1", 
 
 hist(age_diag, col = c("lightblue"), main= "Idade em que o paciente foi diagnosticado", xlab = "Idade (dias)", ylab = "Número de pessoas", ylim = c(0,45))
 
- 
+
 ```
 
 
@@ -441,7 +441,7 @@ hist(age_diag, col = c("lightblue"), main= "Idade em que o paciente foi diagnost
 
 hist(death, col = c("lightblue"), main= "Tempo entre o diagnóstico e a morte do paciente ", xlab = "Dias", ylab = "Número de pessoas", ylim=c(0,150))
 
- 
+
 ```
 
 ## Análise Exploratória Variáveis --\> gender
@@ -538,7 +538,7 @@ lbls=paste(lbls,"%",sep="")
 pie(slices,labels = lbls, col = c("gold","darkolivegreen1","navajowhite","coral","purple", "lightblue","yellow", "pink"), main="Estado vital do paciente no momento da coleta de dados") #tirar as que nao tem    
 ```
 ## Análise Estatística  
- 
+
 ### Avaliar a relação entre o género e a idade de diagnótico
 
 De forma a ser possível fazer a análise estatística inerente, é necessário primeiro verificar a normalidade dos dados. Para tal recorremos ao teste de Shapiro-Wilk.
@@ -726,7 +726,7 @@ E podemos observar também o TopGene que corresponde ao gene com menor valor de 
 DESeq2::plotMA(res_IDH, ylim = c(-7,7))
 
 with(res_IDH[topGene, ], {
-DESeq2::plotMA(res_IDH, ylim = c(-7,7))
+  DESeq2::plotMA(res_IDH, ylim = c(-7,7))
   points(baseMean, log2FoldChange, col="black", cex=2, lwd=2)
   text(baseMean, log2FoldChange, topGene, pos=2, col="black")
 })
@@ -937,7 +937,7 @@ pheatmap(norm_counts, cluster_rows=TRUE, cluster_cols=TRUE, scale="row", show_ro
 
 
 
- **Conclusão** :  O heatmap é um tipo de análise que permite a visualização de diferentes níveis de expressão (sobre e sob expressão) com recurso a cores. Neste caso, selecionamos os 10 primeiros genes a título de exemplo para verificar os seus níveis de expressão.  Quanto mais carregada for a cor -azul para sobre-expressão e vermelho para sob-expressão- mais diferencialmente expresso é o gene.
+**Conclusão** :  O heatmap é um tipo de análise que permite a visualização de diferentes níveis de expressão (sobre e sob expressão) com recurso a cores. Neste caso, selecionamos os 10 primeiros genes a título de exemplo para verificar os seus níveis de expressão.  Quanto mais carregada for a cor -azul para sobre-expressão e vermelho para sob-expressão- mais diferencialmente expresso é o gene.
 
 
 # Análise de enriquecimento
@@ -1036,18 +1036,18 @@ rtsne_res = Rtsne(assay(ddsSE_IDH))
 ```
 
 ```{r}
-plot(rtsne_res$Y, col = ddsSE_IDH$paper_IDH.status
+plot(rtsne_res$Y, col = ddsSE_IDH$paper_IDH.status)
 ```
 
 
 #clustering
 
 ```{r}
-install.packages("genefilter")
+#install.packages("genefilter")
 library(genefilter)
 topgenes = rowttests(as.matrix(assay(ddsSE_IDH)))
 rank_topgenes = order(topgenes$p.value)
-genes = rank_topgenes[1:20]
+genes = rank_topgenes[1:25]
 ddsse_idh_rank = as.matrix(assay(ddsSE_IDH))[genes,]
 ```
 
@@ -1070,18 +1070,112 @@ plot(clustering_hier1)
 clustering_hier11 = hclust(dis_eucl, method = "average")
 plot(clustering_hier11)
 ```
-
 ```{r}
-#meter transposta?
+dis_man = dist(ddsse_idh_rank, method = "manhattan")
+dis_man
+```
+```{r}
+clustering_hier2 = hclust(dis_man)
+plot(clustering_hier2)
 ```
 
 ```{r}
-fviz_nbclust(as.matrix(assay(ddsSE_IDH),kmeans, method = "silhouette"))
+clustering_hier22 = hclust(dis_man, method = "single" )
+plot(clustering_hier22)
+```
+
+```{r}
+clustering_hier3 = hclust(dis_man, method = "average")
+plot(clustering_hier3)
+```
+
+```{r}
+#meter transposta? igual para tudo
 ```
 
 ```{r}
 
 ```
+#k-means
+```{r}
+var_kmeans = kmeans(ddsse_idh_rank, centers = 2, nstart = 10000)   
+var_kmeans
+```
+```{r}
+table(var_kmeans$cluster)   #ver nomes
+```
+```{r}
+plot(ddsse_idh_rank, col=var_kmeans$cluster)
+```
+#machine learning
+```{r}
+df_data = data.frame(as.matrix(assay(ddsSE_IDH)))
+dim(df_data)
+```
+
+```{r}
+df_data_mut=data.frame(group = colData(ddsSE_IDH)$paper_IDH.status, t(df_data)) #ja estava em cima mas pronto
+df_data_mut = na.omit(df_data_mut)
+df_data_mut$group
+pie(table(df_data_mut$group))
+```
+```{r}
+ind = sample(2, nrow(df_data_mut), replace = T, prob=c(0.7, 0.3))
+ind
+```
+
+```{r}
+train = df_data_mut[ind==1, ]
+test = df_data_mut[ind==2, ]
+dim(train)
+dim(test)
+table(train$group)
+table(test$group)
+```
+```{r}
+library(class)  #ver
+knn_pred = knn(train[, 1:4], test[, 1:4], train$group)
+```
+
+```{r}
+library(e1071)
+model = naiveBayes(group ~ ., train)
+nb_pred = predict(model, test)
+nb_pred
+table(nb_pred, test$group)
+pecc(test$species, nb_pred)
+sum(nb_pred == test$group)/length(test$group)
+```
+```{r}
+library(party)
+yeah_ctree <- ctree(group ~., data=train)
+print(yeah_ctree)
+```
+```{r}
+
+```
+```{r}
+library(e1071)   #erros marados
+modelsvm = svm(group ~ ., train)
+svm_pred = predict(modelsvm, test)
+svm_pred
+table(svm_pred, test$group)
+sum(svm_pred==test$group)/length(test$group)
+```
+
+```{r}
+library(randomForest)
+iris.rf = randomForest(group ~ ., data=train, importance=TRUE)
+pred.rf = predict(iris.rf, test)
+pecc(pred.rf, test$group)
+```
+
+```{r}
+install.packages("glmnet")
+```
+```{r}
 
 
-
+```
+ 
+ 
