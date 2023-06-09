@@ -1,0 +1,99 @@
+```{r}
+pca_res = prcomp(as.matrix(assay(ddsSE_IDH)), scale = TRUE)
+pca_res
+```
+
+
+```{r}
+summary(pca_res)
+```
+
+```{r}
+plot(pca_res, ylim = c(0,120))
+```
+
+```{r}
+pca_res$rotation
+```
+
+
+
+```{r}
+min(which(summary(pca_res)$importance[3,]>0.9))
+```
+```{r}
+plot(pca_res$x, col = ddsSE_IDH$paper_IDH.status, pch = 16) 
+```
+
+```{r}
+summary(pca_res$rotation[, 1:2])
+```
+```{r}
+svd_res = svd(scale(as.matrix(assay(ddsSE_IDH))))
+svd_res$v
+```
+```{r}
+plot(pca_res$rotation[, 1], svd_res$v[, 1])
+```
+# MDS
+```{r}
+iris.sc = scale(assay(ddsSE_IDH))
+dist.iris = dist(iris.sc, method = "euclidean")
+cmd.mds <- cmdscale(dist.iris, 3, eig = TRUE)
+var.pc1 = sum(cmd.mds$eig[1])/sum(abs(cmd.mds$eig)) * 100
+var.pc2 = sum(cmd.mds$eig[2])/sum(abs(cmd.mds$eig)) * 100
+var.pc3 = sum(cmd.mds$eig[3])/sum(abs(cmd.mds$eig)) * 100
+par(mfrow = c(1,1))
+plot(cmd.mds$points[,c(1,2)],xlab=lab.pc1,ylab=lab.pc2,main="")
+```
+#tsne
+```{r}
+library(Rtsne)
+rtsne_res = Rtsne(assay(ddsSE_IDH))
+```
+
+```{r}
+plot(rtsne_res$Y, col = ddsSE_IDH$paper_IDH.status
+```
+
+
+#clustering
+
+```{r}
+install.packages("genefilter")
+library(genefilter)
+topgenes = rowttests(as.matrix(assay(ddsSE_IDH)))
+rank_topgenes = order(topgenes$p.value)
+genes = rank_topgenes[1:20]
+ddsse_idh_rank = as.matrix(assay(ddsSE_IDH))[genes,]
+```
+
+```{r}
+dis_eucl = dist(ddsse_idh_rank)
+dis_eucl
+```
+
+```{r}
+clustering_hier = hclust(dis_eucl)
+plot(clustering_hier)
+```
+
+```{r}
+clustering_hier1 = hclust(dis_eucl,method = "single")
+plot(clustering_hier1)
+```
+
+```{r}
+clustering_hier11 = hclust(dis_eucl, method = "average")
+plot(clustering_hier11)
+```
+
+```{r}
+#meter transposta?
+```
+
+```{r}
+fviz_nbclust(as.matrix(assay(ddsSE_IDH),kmeans, method = "silhouette"))
+```
+
+```{r}
