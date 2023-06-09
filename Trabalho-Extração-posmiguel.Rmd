@@ -1043,8 +1043,12 @@ plot(rtsne_res$Y, col = ddsSE_IDH$paper_IDH.status)
 #clustering
 
 ```{r}
+<<<<<<< HEAD
 #install.packages("genefilter")
 library(genefilter)
+=======
+#library(genefilter)
+>>>>>>> 2acb5b6b14a62aac2c74ca3d008685026d3b9650
 topgenes = rowttests(as.matrix(assay(ddsSE_IDH)))
 rank_topgenes = order(topgenes$p.value)
 genes = rank_topgenes[1:25]
@@ -1070,6 +1074,7 @@ plot(clustering_hier1)
 clustering_hier11 = hclust(dis_eucl, method = "average")
 plot(clustering_hier11)
 ```
+<<<<<<< HEAD
 ```{r}
 dis_man = dist(ddsse_idh_rank, method = "manhattan")
 dis_man
@@ -1091,6 +1096,12 @@ plot(clustering_hier3)
 
 ```{r}
 #meter transposta? igual para tudo
+=======
+
+
+```{r}
+
+>>>>>>> 2acb5b6b14a62aac2c74ca3d008685026d3b9650
 ```
 
 ```{r}
