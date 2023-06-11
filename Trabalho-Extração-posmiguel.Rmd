@@ -659,6 +659,9 @@ res_IDH = results(ddsSE_IDH, name = "paper_IDH.status_WT_vs_Mutant")
 summary(res_IDH)
 
 ```
+```{r}
+res_IDH
+```
 
 A análise da Expressão Diferencial foi feita no subconjunto dos dados TCGA-GBM de RNA-seq, onde as amostras com valores ausentes para a variável 'p_IDH' foram removidos e os dados de expressão foram filtrados para manter apenas os genes com pelo menos 10 contagens em todas as amostras e assim permitir-nos filtrar as linhas da matriz (counts) que possuem baixos níveis de expressão em todas as amostras.
 
@@ -984,12 +987,13 @@ Os gráficos anteriormente apresentados, demonstram os termos de gene ontology e
 ```{r}
 pca = prcomp(gbm_assay, scale = TRUE)
 pca
-reduced_data <- pca$x
+reduced_data = pca$x
 ```
 
 ```{r}
 summary(pca)
 ```
+
 ```{r}
 plot(pca, ylim=c(0, 140))
 ```
@@ -1106,12 +1110,13 @@ for (k in 2:10) {
 plot(2:10, sil_scores, type = "b", xlab = "Number of Clusters (k)", ylab = "Average Silhouette Width")
 ```
 
+Devido ao erro "Stack overflow" nos seguintes métodos, vamos utilizar como alternativa os resultados provenientes do PCA, de modo a resolver este problema da capacidade computacional.
 
 # Machine Learning
 
 ```{r}
 gbm_assay_transposed <- t(gbm_assay)
-gbm_assay_with_metadata <- cbind(gbm_assay_with_metadata, meta_gbm$paper_IDH.status)
+gbm_assay_with_metadata <- cbind(gbm_assay, meta_gbm$paper_IDH.status)
 colnames(gbm_assay_with_metadata)[176] = "idh_status"
 gbm_assay_with_metadata
 ```
@@ -1277,9 +1282,6 @@ plot(clustering_hier3)
 >>>>>>> 2acb5b6b14a62aac2c74ca3d008685026d3b9650
 ```
 
-```{r}
-
-```
 #k-means
 ```{r}
 var_kmeans = kmeans(ddsse_idh_rank, centers = 2, nstart = 10000)   
@@ -1298,10 +1300,21 @@ dim(df_data)
 ```
 
 ```{r}
-df_data_mut=data.frame(group = colData(ddsSE_IDH)$paper_IDH.status, t(df_data)) #ja estava em cima mas pronto
+#Alteração feita
+df_data_mut = data.frame(group = as.factor(colData(ddsSE_IDH)$paper_IDH.status), t(df_data))
 df_data_mut = na.omit(df_data_mut)
-df_data_mut$group
+
+# Ordenar o dataframe pelos valores de padj em ordem crescente
+res_IDH_sorted <- res_IDH[order(res_IDH$padj), ]
+
+# Selecionar as primeiras 1000 linhas
+res_IDH_selected = rownames(res_IDH_sorted)[1:1000]
+
+x = subset(df_data_mut, select = c("group", res_IDH_selected))
+x
+
 pie(table(df_data_mut$group))
+
 ```
 ```{r}
 ind = sample(2, nrow(df_data_mut), replace = T, prob=c(0.7, 0.3))
@@ -1316,6 +1329,7 @@ dim(test)
 table(train$group)
 table(test$group)
 ```
+
 ```{r}
 library(class)  #ver
 knn_pred = knn(train[, 1:4], test[, 1:4], train$group)
@@ -1323,18 +1337,20 @@ knn_pred = knn(train[, 1:4], test[, 1:4], train$group)
 
 ```{r}
 library(e1071)
-model = naiveBayes(group ~ ., train)
+model = naiveBayes(group ~ ., train[,1:10000])
 nb_pred = predict(model, test)
 nb_pred
 table(nb_pred, test$group)
-pecc(test$species, nb_pred)
+#pecc(test$species, nb_pred)
 sum(nb_pred == test$group)/length(test$group)
 ```
+
 ```{r}
 library(party)
 yeah_ctree <- ctree(group ~., data=train)
 print(yeah_ctree)
 ```
+
 ```{r}
 
 ```
