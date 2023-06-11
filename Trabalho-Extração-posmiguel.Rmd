@@ -89,6 +89,7 @@ library(summarytools)
 library(org.Hs.eg.db)
 library(clusterProfiler)
 library(pheatmap)
+library(caret)
 ```
 
 # Recolha dos dados: Importação e Carregamento dados de Expressão/Metadados e Verificação do seu conteúdo e dimensão
@@ -1310,50 +1311,71 @@ res_IDH_sorted <- res_IDH[order(res_IDH$padj), ]
 # Selecionar as primeiras 1000 linhas
 res_IDH_selected = rownames(res_IDH_sorted)[1:1000]
 
-x = subset(df_data_mut, select = c("group", res_IDH_selected))
-x
+res_IDH_best = subset(df_data_mut, select = c("group", res_IDH_selected))
+res_IDH_best
 
-pie(table(df_data_mut$group))
+#pie(table(df_data_mut$group))
 
 ```
 ```{r}
-ind = sample(2, nrow(df_data_mut), replace = T, prob=c(0.7, 0.3))
+ind = sample(2, nrow(res_IDH_best), replace = T, prob=c(0.7, 0.3))
 ind
 ```
 
 ```{r}
-train = df_data_mut[ind==1, ]
-test = df_data_mut[ind==2, ]
+train = res_IDH_best[ind==1, ]
+test = res_IDH_best[ind==2, ]
 dim(train)
 dim(test)
 table(train$group)
 table(test$group)
 ```
+## K-Nearest neighbors
 
 ```{r}
 library(class)  #ver
-knn_pred = knn(train[, 1:4], test[, 1:4], train$group)
+knn_pred = knn(train[, 2:ncol(train)], test[, 2:ncol(test)], train$group)
+table(knn_pred, test$group)
+pecc(knn_pred, test$group)
+
 ```
+## NaiveBayes
 
 ```{r}
 library(e1071)
-model = naiveBayes(group ~ ., train[,1:10000])
+model = naiveBayes(group ~ ., train)
 nb_pred = predict(model, test)
 nb_pred
 table(nb_pred, test$group)
-#pecc(test$species, nb_pred)
+pecc(test$group, nb_pred)
 sum(nb_pred == test$group)/length(test$group)
 ```
+## Decision Tree
 
 ```{r}
 library(party)
-yeah_ctree <- ctree(group ~., data=train)
-print(yeah_ctree)
+IDH_ctree = ctree(group ~., data=train)
+print(IDH_ctree)
+plot(IDH_ctree)
 ```
 
 ```{r}
+testPred = predict(IDH_ctree, test)
+testPred[1]
+table(testPred,test$group)
+pecc(test$group, testPred)
+```
+
+```{r}
+# NAO FUNCIONA 
+modelo <- lm(train$group ~ ., data = train)
+
+previsoes <- predict(modelo, newdata = test)
+
+RMSE(previsoes, test$group)
 
 ```
+
 ```{r}
 library(e1071)   #erros marados
 modelsvm = svm(group ~ ., train)
@@ -1368,14 +1390,21 @@ library(randomForest)
 iris.rf = randomForest(group ~ ., data=train, importance=TRUE)
 pred.rf = predict(iris.rf, test)
 pecc(pred.rf, test$group)
+table(pred.rf, test$group)
 ```
 
 ```{r}
-install.packages("glmnet")
+library(nnet)
+nn = nnet(train$group,train[, 2:ncol(train)], size=5)
+
 ```
+
 ```{r}
-
-
+library(caret)
+set.seed(16718)
+cv.ctrl = trainControl("cv", number = 5)
+group_nn_cv = train(train$group~., data = res_IDH_best[,2:ncol(res_IDH_best)], method = "nnet", tuneLenght=10, trControl=cv.ctrl, maxit = 100,)
 ```
+
  
  
