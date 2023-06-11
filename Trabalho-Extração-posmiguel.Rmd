@@ -96,6 +96,8 @@ library(e1071)
 library(party)
 library(randomForest)
 library(nnet)
+library(Rtsne)
+
 
 ```
 
@@ -990,15 +992,16 @@ barplot(result1)
 Os gráficos anteriormente apresentados, demonstram os termos de gene ontology enriquecidos associados ao nosso dataset cada barra representa um termo go que está associado a uma determinada função biológica. Os valores expressos nos gráficos apresentam apenas os genes com valores de prova menores que 0.05 indicando valores sobreexpressos e subexpressos.
 
 
-## Redução de dimensionalidade
+# Redução de dimensionalidade
 
+## PCA
 O PCA têm como objetivo definir um conjunto mais pequeno de variáveis não correlacionadas entre si que explicam a maior parte da variabilidade dos dados.
 Este consiste num procedimento algébrico que converte as variáveis originais (tipicamente correlacionadas) num conjunto de variáveis não correlacionadas (linearmente) que se designam por componentes principais (PC) ou variáveis latentes.
 Cada PC é gerada de forma a explicar o máximo de variabilidade da parte ainda não explicada, tendo que ser ortogonal às PCs anteriores
 
 ```{r}
 pca = prcomp(gbm_assay, scale = TRUE)
-pca
+
 reduced_data = pca$x
 ```
 
@@ -1016,7 +1019,10 @@ São necessárias 6 componentes principais para explicar 90% da variabilidade do
 ```{r}
 plot(pca, ylim=c(0, 140), main ="Componentes principais (PCA)", col = "darkblue")
 ```
+
+
 A visualização gráfica do PCA confirmou a análise anterior sobre a variabilidade, revelando que a maior parte da mesma é explicada pelo primeiro componente principal.
+
 
 ```{r}
 plot(reduced_data[, 1], reduced_data[, 2], xlab = "PC1", ylab = "PC2",  col = as.integer(meta_gbm$paper_IDH.status, pch=19))
@@ -1029,7 +1035,9 @@ Neste gráfico de dispersão dos dados reduzidos, vemos as duas primeiras compon
 ```{r}
 plot(reduced_data[, 1], reduced_data[, 2], xlab = "PC1", ylab = "PC2",  col = as.integer(meta_gbm$paper_Original.Subtype), pch=19)
 legend("topleft", legend = levels(meta_gbm$paper_Original.Subtype), col =1:length(levels(meta_gbm$paper_Original.Subtype)), pch = 19)
+
 ```
+
 Tal como observado anteriormente, para a variável meta_gbm$paper_Original.Subtype, também não existe uma boa separação e homogeneidade dos dados.
 
 ```{r}
@@ -1042,19 +1050,21 @@ Os valores na matriz de rotação indicam a contribuição relativa de cada gene
 A SVD (Decomposição em Valores Singulares) é um método algébrico de fatorização de matrizes amplamente utilizado na análise de dados para reduzir a dimensionalidade dos dados. A PCA (Análise de Componentes Principais) é um caso particular da SVD e é recomendada como um dos métodos para calcular a PCA.
 
 ```{r}
-svd_res <- svd(scale(gbm_assay))
-svd_res$v
+svd_res = svd(scale(gbm_assay))
 ```
 
 ```{r}
 plot(pca$rotation[,1], svd_res$v[,1], pch=19, xlab="PC1", ylab="SV1-dir") #como era de esperar
 abline(0,1, col="red")
 ```
+
 O gráfico resultante mostra a relação entre os vetores de rotação da primeira componente principal do PCA e os vetores singulares direitos da primeira componente singular do SVD. Espera-se que haja uma relação positiva entre esses vetores, uma vez que ambos descrevem informações importantes sobre a estrutura dos dados. A linha diagonal vermelha adicionada ao gráfico representa uma relação linear perfeita entre esses vetores.Em suma, as colunas de v são equivalentes aos loadings resultantes da PCA.
 
 ```{r}
 plot(svd_res$d^2/sum(svd_res$d^2),pch=19,xlab="SV",ylab="Variancia explicada") #primeiro explica muito - 0.74 ou o ca
 ```
+
+
 A visualização gráfica do PCA confirmou a análise anterior sobre a variabilidade, revelando que a maior parte da mesma é explicada pelo primeiro componente principal.
 
 # Clustering
@@ -1120,6 +1130,7 @@ plot(h_euc_aver)
 plot(h_man_aver)
 plot(h_mink_aver)
 ```
+
 ## K-Means Clustering
 
 O algoritmo k-means é um método de clustering amplamente utilizado para agrupar dados em k clusters.
@@ -1137,6 +1148,7 @@ for (k in 1:10) {
 
 plot(1:10, wss, type = "b", xlab = "Number of Clusters (k)", ylab = "Within-Cluster Sum of Squares")
 ```
+
 O gráfico do método do cotovelo (elbow method) é usado para determinar o número ideal de clusters no algoritmo de clustering, como o k-means. Ele ajuda a identificar o ponto de inflexão no gráfico, o "cotovelo", que indica o número ótimo de clusters para o conjunto de dados. No entanto, este método é heuristico e por isso o resultado do cotovelo pode nao correponder ao numero ideal de clusters. 
 
 Pelos resultados observados no gráfico, o ponto de inflexão indica que contém dois clusters para o conjunto de dados.
@@ -1153,32 +1165,6 @@ table(kmeans_result1$cluster)
 O resultado da análise de agrupamento K-means mostra que os dados foram divididos em dois clusters numerados como 1 e 2. 
 
 Devido ao erro "Stack overflow" nos seguintes métodos, vamos utilizar como alternativa os resultados provenientes do PCA, de modo a resolver este problema da capacidade computacional.
-
-## MDS
-
-MDS (Multidimensional Scaling) é uma técnica de análise exploratória de dados que visa representar graficamente a proximidade ou dissimilaridade entre amostras ou objetos com base em uma matriz de distâncias.
-
-```{r}
-#iris.sc = scale(assay(ddsSE_IDH))
-#dist.iris = dist(iris.sc, method = "euclidean")
-#cmd.mds <- cmdscale(dist.iris, 3, eig = TRUE)
-#var.pc1 = sum(cmd.mds$eig[1])/sum(abs(cmd.mds$eig)) * 100
-#var.pc2 = sum(cmd.mds$eig[2])/sum(abs(cmd.mds$eig)) * 100
-#var.pc3 = sum(cmd.mds$eig[3])/sum(abs(cmd.mds$eig)) * 100
-#par(mfrow = c(1,1))
-#plot(cmd.mds$points[,c(1,2)],xlab=lab.pc1,ylab=lab.pc2,main="")
-```
-
-## Tsne
-
-```{r}
-library(Rtsne)
-#rtsne_res = Rtsne(assay(ddsSE_IDH))
-```
-
-```{r}
-#plot(rtsne_res$Y, col = ddsSE_IDH$paper_IDH.status)
-```
 
 # Machine learning
 
@@ -1202,7 +1188,6 @@ res_IDH_sorted <- res_IDH[order(res_IDH$padj), ]
 res_IDH_selected = rownames(res_IDH_sorted)[1:1000]
 
 res_IDH_best = subset(df_data_mut, select = c("group", res_IDH_selected))
-res_IDH_best
 ```
 
 ### Divisão da amostra
@@ -1268,9 +1253,13 @@ A matriz de confusão obtida revela 2 verdadeiros negativos, 0 falsos negativos,
 
 ## Decision Tree
 
+Árvores de decisão (Decision Trees) são modelos machine learning amplamente utilizados para tarefas de classificação e regressão.
+O objetivo de uma árvore de decisão é dividir o conjunto de dados com base nos valores dos atributos, de forma que as amostras com características semelhantes fiquem agrupadas em ramos da árvore. Cada nó interno da árvore representa uma decisão com base em um atributo, e cada ramo representa um valor possível desse atributo. As folhas da árvore representam as classes (no caso de classificação) ou os valores de regressão (no caso de regressão) que são atribuídos às amostras após percorrer a árvore.
 
+A visualização da árvore de decisão pode fornecer insights sobre a lógica por trás das decisões do modelo e ajudar a interpretar como os atributos influenciam na classificação das amostras. É uma ferramenta valiosa para entender e comunicar os resultados do modelo de árvore de decisão.
 
 ```{r}
+set.seed(1)
 IDH_ctree = ctree(group ~., data=train)
 plot(IDH_ctree)
 ```
@@ -1279,20 +1268,7 @@ plot(IDH_ctree)
 testPred = predict(IDH_ctree, test)
 testPred[1]
 table(testPred,test$group)
-#pecc(test$group, testPred)
-
-#confusion_matrix3 = confusionMatrix(testPred, test$group)
-#confusion_matrix3
-```
-
-```{r}
-# NAO FUNCIONA 
-#modelo <- lm(train$group ~ ., data = train)
-
-#previsoes <- predict(modelo, newdata = test)
-
-#RMSE(previsoes, test$group)
-
+pecc(test$group, testPred)
 ```
 
 ```{r}
@@ -1302,7 +1278,9 @@ svm_pred = predict(modelsvm, test)
 table(svm_pred, test$group)
 sum(svm_pred==test$group)/length(test$group)
 ```
-## RandomForest
+## Random Forest
+
+Random Forest (Floresta Aleatória) é um algoritmo de aprendizado de máquina que utiliza um conjunto de árvores de decisão para realizar classificação ou regressão. A principal ideia por trás do Random Forest é combinar as previsões de várias árvores de decisão para obter um resultado final mais robusto e preciso.
 
 ```{r}
 model.rf = randomForest(group ~ ., data=train, importance=TRUE)
@@ -1317,17 +1295,30 @@ F1
 ```
 A matriz de confusão obtida revela 2 verdadeiros negativos, 0 falsos negativos, 0 falsos positivos e 36 verdadeiros positivos. Relativamente às métricas de desempenho, vale realçar que a precisão obtida para o modelo foi de aproxidamente 100%, indicando um alto nível de precisão do modelo, onde todas as previsões foram corretas, a sensibilidade teve o valor de 1, a especicidade teve o valor de 1 e o valor de F1 de 1.
 
+# Neural networks 
+
+Na construção do modelo por "Neural Networks" foi dado o argumento "tuneLenght = 10", correspondendo isto ao número combinações aleatórias de hiperparâmetros possíveis a utilizar pelo algoritmo na sua construção.
+Obtivemos que os parâmetros selecionados correspondem a um "size" 1 (número de unidades na camada intermédia) e a um "decay" (regularização para evitar sobreajustamento) de 0.1, possuindo o modelo uma precisão de aproximadamente $0.62$.
+Random Forest (Floresta Aleatória) é um algoritmo de aprendizado de máquina que utiliza um conjunto de árvores de decisão para realizar classificação ou regressão. A principal ideia por trás do Random Forest é combinar as previsões de várias árvores de decisão para obter um resultado final mais robusto e preciso.
 
 ```{r}
-#nn = nnet(train$group,train[, 2:ncol(train)], size=5)
-
+set.seed(16718)
+cv.ctrl = trainControl("cv", number = 2,repeats = 1)
+group_nn_cv = train(group~., data = train[, 1:901], method = "nnet", tuneLenght=10, maxit = 10,)
 ```
+
+# Importância de variáveis
+
+No modelo seguinte, aplicamos validação cruzada com 10 folds repetidos 5 vezes para estimar o erro. Para garantir a replicabilidade dos resultados, configuramos uma seed com o valor "14503".
 
 ```{r}
-#set.seed(16718)
-#cv.ctrl = trainControl("cv", number = 5)
-#group_nn_cv = train(train$group~., data = res_IDH_best[,2:ncol(res_IDH_best)], method = "nnet", tuneLenght=10, trControl=cv.ctrl, maxit = 100,)
+set.seed(14503)
+control = rfeControl(functions=rfFuncs, method="cv", number=10)
+results = rfe(group~., data = train, rfeControl=control, sizes=c(1:10,20,40,60,80,100))
+results
+important_genes = predictors(results)
 ```
 
- 
- 
+Foi utilizado o método de Recursive Feature Elimination (RFE) para realizar a seleção de atributos no conjunto de dados utilizado para o machine learning. O algoritmo foi executado com validação cruzada de 10 folds.
+
+Com base nos dados fornecidos, podemos concluir que o modelo alcançou altos níveis de precisão (variando de 0,9189 a 0,9735) e concordância (variando de 0,4384 a 0,6667) ao prever o grupo alvo. O desempenho do modelo se manteve estável à medida que mais variáveis foram consideradas. A seleção de cerca de 4 a 5 variáveis parece ser suficiente para obter resultados consistentes. Essas conclusões sugerem que o modelo é promissor e as variáveis selecionadas são importantes para a previsão do grupo.
