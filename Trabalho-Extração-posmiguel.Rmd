@@ -90,6 +90,13 @@ library(org.Hs.eg.db)
 library(clusterProfiler)
 library(pheatmap)
 library(caret)
+library(cluster)
+library(class)
+library(e1071)
+library(party)
+library(randomForest)
+library(nnet)
+
 ```
 
 # Recolha dos dados: Importação e Carregamento dados de Expressão/Metadados e Verificação do seu conteúdo e dimensão
@@ -983,7 +990,11 @@ barplot(result1)
 Os gráficos anteriormente apresentados, demonstram os termos de gene ontology enriquecidos associados ao nosso dataset cada barra representa um termo go que está associado a uma determinada função biológica. Os valores expressos nos gráficos apresentam apenas os genes com valores de prova menores que 0.05 indicando valores sobreexpressos e subexpressos.
 
 
-# Redução de dimensionalidade
+## Redução de dimensionalidade
+
+O PCA têm como objetivo definir um conjunto mais pequeno de variáveis não correlacionadas entre si que explicam a maior parte da variabilidade dos dados.
+Este consiste num procedimento algébrico que converte as variáveis originais (tipicamente correlacionadas) num conjunto de variáveis não correlacionadas (linearmente) que se designam por componentes principais (PC) ou variáveis latentes.
+Cada PC é gerada de forma a explicar o máximo de variabilidade da parte ainda não explicada, tendo que ser ortogonal às PCs anteriores
 
 ```{r}
 pca = prcomp(gbm_assay, scale = TRUE)
@@ -994,10 +1005,18 @@ reduced_data = pca$x
 ```{r}
 summary(pca)
 ```
+```{r}
+i = 1
+while ( summary(pca)$importance[3,i] < 0.90 ) i = i + 1
+i
+```
+A primeira componente é responsável por explicar a maior parte da variabilidade dos dados, correspondendo a 74%.
+São necessárias 6 componentes principais para explicar 90% da variabilidade dos dados.
 
 ```{r}
-plot(pca, ylim=c(0, 140))
+plot(pca, ylim=c(0, 140), main ="Componentes principais (PCA)", col = "darkblue")
 ```
+A visualização gráfica do PCA confirmou a análise anterior sobre a variabilidade, revelando que a maior parte da mesma é explicada pelo primeiro componente principal.
 
 ```{r}
 plot(reduced_data[, 1], reduced_data[, 2], xlab = "PC1", ylab = "PC2",  col = as.integer(meta_gbm$paper_IDH.status, pch=19))
@@ -1005,30 +1024,22 @@ legend("topleft", legend = levels(meta_gbm$paper_IDH.status), col =1:length(leve
 
 ```
 
+Neste gráfico de dispersão dos dados reduzidos, vemos as duas primeiras componentes principais e a distribuição dos pontos coloridos de acordo com a variável meta_gbm$paper_IDH.status. Após análise, verificamos que não existe uma boa separação e homogeneidade dos dados.
+
 ```{r}
 plot(reduced_data[, 1], reduced_data[, 2], xlab = "PC1", ylab = "PC2",  col = as.integer(meta_gbm$paper_Original.Subtype), pch=19)
 legend("topleft", legend = levels(meta_gbm$paper_Original.Subtype), col =1:length(levels(meta_gbm$paper_Original.Subtype)), pch = 19)
 ```
+Tal como observado anteriormente, para a variável meta_gbm$paper_Original.Subtype, também não existe uma boa separação e homogeneidade dos dados.
 
 ```{r}
-rot <- pca$rotation #contribuição de cada gene para cada componente principal
-
-
-genes_ordenados <- order(apply(abs(rot), 1, max), decreasing = TRUE)
-genes_selecionados <- rownames(rot)[genes_ordenados[1:100]]
-genes_selecionados     #variavel com 100 genes com coeficientes de correlação maior (dava para a 1ªparte do trabalho); da para fazer cluster por expressão
+rot = pca$rotation 
 ```
+Os valores na matriz de rotação indicam a contribuição relativa de cada gene para cada componente principal.
 
+## SVD 
 
-```{r}
-i = 1
-while ( summary(pca)$importance[3,i] < 0.90 ) i = i + 1
-i
-```
-São necessárias 6 componentes principais para explicar 90% da variabilidade dos dados.
-
-
-# SVD
+A SVD (Decomposição em Valores Singulares) é um método algébrico de fatorização de matrizes amplamente utilizado na análise de dados para reduzir a dimensionalidade dos dados. A PCA (Análise de Componentes Principais) é um caso particular da SVD e é recomendada como um dos métodos para calcular a PCA.
 
 ```{r}
 svd_res <- svd(scale(gbm_assay))
@@ -1039,53 +1050,83 @@ svd_res$v
 plot(pca$rotation[,1], svd_res$v[,1], pch=19, xlab="PC1", ylab="SV1-dir") #como era de esperar
 abline(0,1, col="red")
 ```
+O gráfico resultante mostra a relação entre os vetores de rotação da primeira componente principal do PCA e os vetores singulares direitos da primeira componente singular do SVD. Espera-se que haja uma relação positiva entre esses vetores, uma vez que ambos descrevem informações importantes sobre a estrutura dos dados. A linha diagonal vermelha adicionada ao gráfico representa uma relação linear perfeita entre esses vetores.Em suma, as colunas de v são equivalentes aos loadings resultantes da PCA.
 
 ```{r}
 plot(svd_res$d^2/sum(svd_res$d^2),pch=19,xlab="SV",ylab="Variancia explicada") #primeiro explica muito - 0.74 ou o ca
 ```
+A visualização gráfica do PCA confirmou a análise anterior sobre a variabilidade, revelando que a maior parte da mesma é explicada pelo primeiro componente principal.
 
 # Clustering
 
 ```{r}
-dist_matrix <- dist(gbm_assay, method = "euclidean")
-dist_matrix1 <- dist(gbm_assay, method = "manhattan")
-dist_matrix2 <- dist(gbm_assay, method = "minkowski")
+topgenes = rowttests(as.matrix(gbm_assay))
+rank_topgenes = order(topgenes$p.value)
+genes = rank_topgenes[1:25]
+gbm_assay_rank = as.matrix(gbm_assay)[genes,]
+```
+As matrizes de distância são úteis para análises de agrupamento (clustering) e redução de dimensionalidade, como o cálculo de mapas de distância multidimensionais (MDS) ou a aplicação de algoritmos de clustering baseados em distância. Cada matriz de distância reflete uma medida diferente de dissimilaridade entre as amostras do conjunto de dados.
 
+```{r}
+dist_matrix = dist(gbm_assay_rank, method = "euclidean")
+
+dist_matrix1 = dist(gbm_assay_rank, method = "manhattan")
+
+dist_matrix2 = dist(gbm_assay_rank, method = "minkowski")
 ```
 
 ```{r}
-hc <- hclust(dist_matrix, method = "complete")
-hc1 <- hclust(dist_matrix1, method = "complete")
-hc11 <- hclust(dist_matrix2, method = "complete")
-
-hc2 <- hclust(dist_matrix, method = "single")
-hc22 <- hclust(dist_matrix, method = "single")
-hc222 <- hclust(dist_matrix, method = "single")
-
-hc3 <- hclust(dist_matrix, method = "average")
-hc33 <- hclust(dist_matrix, method = "average")
-hc333 <- hclust(dist_matrix, method = "average")
+h_euc_comp = hclust(dist_matrix, method = "complete")
+h_man_comp = hclust(dist_matrix1, method = "complete")
+h_mink_comp = hclust(dist_matrix2, method = "complete")
 ```
 
+## Representação gráfica do clustering hierárquico do método "complete"
 
 ```{r}
-#plots
+plot(h_euc_comp)
+plot(h_man_comp)
+plot(h_mink_comp)
 ```
-
-
-
-#K-Means Clustering
 
 ```{r}
-kmeans_result = kmeans(gbm_assay, centers = 2)
-table(kmeans_result$cluster)
+h_euc_sing = hclust(dist_matrix, method = "single")
+h_man_sing = hclust(dist_matrix1, method = "single")
+h_mink_sing = hclust(dist_matrix2, method = "single")
 ```
 
+## Representação gráfica do clustering hierárquico do método "single"
+
+Este método corresponde à distância entre 2 clusters, sendo esta a menor distância entre pares de elementos dos dois clusters.
 
 ```{r}
-kmeans_result1 = kmeans(reduced_data, centers = 2) #com dados do pca
-table(kmeans_result1$cluster)
+plot(h_euc_sing)
+plot(h_man_sing)
+plot(h_mink_sing)
 ```
+
+```{r}
+h_euc_aver = hclust(dist_matrix, method = "average")
+h_man_aver = hclust(dist_matrix1, method = "average")
+h_mink_aver = hclust(dist_matrix2, method = "average")
+```
+
+## Representação gráfica do clustering hierárquico do método "average"
+
+Este método corresponde à distância entre 2 clusters, sendo esta a maior distância entre pares de elementos dos dois clusters.
+
+```{r}
+plot(h_euc_aver)
+plot(h_man_aver)
+plot(h_mink_aver)
+```
+## K-Means Clustering
+
+O algoritmo k-means é um método de clustering amplamente utilizado para agrupar dados em k clusters.
+O k-means tenta encontrar k centróides, que representam os centros dos clusters, minimizando a soma dos quadrados das distâncias entre cada ponto de dados e o centróide do cluster ao qual ele pertence.
+
+## Gráfico "elbow"  
+
 ```{r}
 wss <- numeric(10)  #cotovelo
 
@@ -1096,209 +1137,58 @@ for (k in 1:10) {
 
 plot(1:10, wss, type = "b", xlab = "Number of Clusters (k)", ylab = "Within-Cluster Sum of Squares")
 ```
+O gráfico do método do cotovelo (elbow method) é usado para determinar o número ideal de clusters no algoritmo de clustering, como o k-means. Ele ajuda a identificar o ponto de inflexão no gráfico, o "cotovelo", que indica o número ótimo de clusters para o conjunto de dados. No entanto, este método é heuristico e por isso o resultado do cotovelo pode nao correponder ao numero ideal de clusters. 
+
+Pelos resultados observados no gráfico, o ponto de inflexão indica que contém dois clusters para o conjunto de dados.
+
 ```{r}
-library(cluster)
+kmeans_result = kmeans(gbm_assay, centers = 2)
+table(kmeans_result$cluster)
 ```
 
 ```{r}
-sil_scores <- numeric(10) #silhueta (demora muito correr)
-
-for (k in 2:10) {
-  kmeans_result <- kmeans(reduced_data, centers = k)
-  sil_scores[k] <- silhouette(kmeans_result$cluster, dist(reduced_data))$avg.width
-}
-
-plot(2:10, sil_scores, type = "b", xlab = "Number of Clusters (k)", ylab = "Average Silhouette Width")
+kmeans_result1 = kmeans(reduced_data, centers = 2) #com dados do pca
+table(kmeans_result1$cluster)
 ```
+O resultado da análise de agrupamento K-means mostra que os dados foram divididos em dois clusters numerados como 1 e 2. 
 
 Devido ao erro "Stack overflow" nos seguintes métodos, vamos utilizar como alternativa os resultados provenientes do PCA, de modo a resolver este problema da capacidade computacional.
 
-# Machine Learning
+## MDS
+
+MDS (Multidimensional Scaling) é uma técnica de análise exploratória de dados que visa representar graficamente a proximidade ou dissimilaridade entre amostras ou objetos com base em uma matriz de distâncias.
 
 ```{r}
-gbm_assay_transposed <- t(gbm_assay)
-gbm_assay_with_metadata <- cbind(gbm_assay, meta_gbm$paper_IDH.status)
-colnames(gbm_assay_with_metadata)[176] = "idh_status"
-gbm_assay_with_metadata
+#iris.sc = scale(assay(ddsSE_IDH))
+#dist.iris = dist(iris.sc, method = "euclidean")
+#cmd.mds <- cmdscale(dist.iris, 3, eig = TRUE)
+#var.pc1 = sum(cmd.mds$eig[1])/sum(abs(cmd.mds$eig)) * 100
+#var.pc2 = sum(cmd.mds$eig[2])/sum(abs(cmd.mds$eig)) * 100
+#var.pc3 = sum(cmd.mds$eig[3])/sum(abs(cmd.mds$eig)) * 100
+#par(mfrow = c(1,1))
+#plot(cmd.mds$points[,c(1,2)],xlab=lab.pc1,ylab=lab.pc2,main="")
 ```
 
+## Tsne
 
-```{r}
-ind = sample(2, nrow(gbm_assay_with_metadata[, 1:176]), replace=TRUE, prob=c(0.7, 0.3))  #nao sei porque nao assume a coluna demetadados
-trainData = gbm_assay[ind==1,]
-testData = gbm_assay[ind==2,]
-```
-
-
-```{r}
-dim(trainData)
-dim(testData)
-```
-```{r}
-library(class)
-knn_pred = knn(trainData[,], testData[,], trainData$idh.status)
-knn_pred
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r}
-pca_res = prcomp(as.matrix(assay(ddsSE_IDH)), scale = TRUE)
-pca_res
-```
-
-
-```{r}
-summary(pca_res)
-```
-
-```{r}
-plot(pca_res, ylim = c(0,120))
-```
-
-```{r}
-pca_res$rotation
-```
-
-
-
-```{r}
-min(which(summary(pca_res)$importance[3,]>0.9))
-```
-```{r}
-plot(pca_res$x, col = ddsSE_IDH$paper_IDH.status, pch = 16) 
-```
-
-```{r}
-summary(pca_res$rotation[, 1:2])
-```
-```{r}
-svd_res = svd(scale(as.matrix(assay(ddsSE_IDH))))
-svd_res$v
-```
-```{r}
-plot(pca_res$rotation[, 1], svd_res$v[, 1])
-```
-# MDS
-```{r}
-iris.sc = scale(assay(ddsSE_IDH))
-dist.iris = dist(iris.sc, method = "euclidean")
-cmd.mds <- cmdscale(dist.iris, 3, eig = TRUE)
-var.pc1 = sum(cmd.mds$eig[1])/sum(abs(cmd.mds$eig)) * 100
-var.pc2 = sum(cmd.mds$eig[2])/sum(abs(cmd.mds$eig)) * 100
-var.pc3 = sum(cmd.mds$eig[3])/sum(abs(cmd.mds$eig)) * 100
-par(mfrow = c(1,1))
-plot(cmd.mds$points[,c(1,2)],xlab=lab.pc1,ylab=lab.pc2,main="")
-```
-#tsne
 ```{r}
 library(Rtsne)
-rtsne_res = Rtsne(assay(ddsSE_IDH))
+#rtsne_res = Rtsne(assay(ddsSE_IDH))
 ```
 
 ```{r}
-plot(rtsne_res$Y, col = ddsSE_IDH$paper_IDH.status)
+#plot(rtsne_res$Y, col = ddsSE_IDH$paper_IDH.status)
 ```
 
+# Machine learning
 
-#clustering
+Para a análise através do machine learning, vamos utilizar o dataset ddsSE_IDH. Desta forma, foi feita a previsão para a variável de metadados IDH_status, sendo sido adicionada ao dataset.
 
-```{r}
-<<<<<<< HEAD
-#install.packages("genefilter")
-library(genefilter)
-=======
-#library(genefilter)
->>>>>>> 2acb5b6b14a62aac2c74ca3d008685026d3b9650
-topgenes = rowttests(as.matrix(assay(ddsSE_IDH)))
-rank_topgenes = order(topgenes$p.value)
-genes = rank_topgenes[1:25]
-ddsse_idh_rank = as.matrix(assay(ddsSE_IDH))[genes,]
-```
-
-```{r}
-dis_eucl = dist(ddsse_idh_rank)
-dis_eucl
-```
-
-```{r}
-clustering_hier = hclust(dis_eucl)
-plot(clustering_hier)
-```
-
-```{r}
-clustering_hier1 = hclust(dis_eucl,method = "single")
-plot(clustering_hier1)
-```
-
-```{r}
-clustering_hier11 = hclust(dis_eucl, method = "average")
-plot(clustering_hier11)
-```
-<<<<<<< HEAD
-```{r}
-dis_man = dist(ddsse_idh_rank, method = "manhattan")
-dis_man
-```
-```{r}
-clustering_hier2 = hclust(dis_man)
-plot(clustering_hier2)
-```
-
-```{r}
-clustering_hier22 = hclust(dis_man, method = "single" )
-plot(clustering_hier22)
-```
-
-```{r}
-clustering_hier3 = hclust(dis_man, method = "average")
-plot(clustering_hier3)
-```
-
-```{r}
-#meter transposta? igual para tudo
-=======
-
-
-```{r}
-
->>>>>>> 2acb5b6b14a62aac2c74ca3d008685026d3b9650
-```
-
-#k-means
-```{r}
-var_kmeans = kmeans(ddsse_idh_rank, centers = 2, nstart = 10000)   
-var_kmeans
-```
-```{r}
-table(var_kmeans$cluster)   #ver nomes
-```
-```{r}
-plot(ddsse_idh_rank, col=var_kmeans$cluster)
-```
-#machine learning
 ```{r}
 df_data = data.frame(as.matrix(assay(ddsSE_IDH)))
 dim(df_data)
 ```
+### Criação do dataset 
 
 ```{r}
 #Alteração feita
@@ -1313,49 +1203,75 @@ res_IDH_selected = rownames(res_IDH_sorted)[1:1000]
 
 res_IDH_best = subset(df_data_mut, select = c("group", res_IDH_selected))
 res_IDH_best
-
-#pie(table(df_data_mut$group))
-
 ```
+
+### Divisão da amostra
+
+Vamos dividir em duas variáveis, uma para a construção e outra para a testagem do modelo, 70% e 30% respetivamente.
+
 ```{r}
 ind = sample(2, nrow(res_IDH_best), replace = T, prob=c(0.7, 0.3))
-ind
+train = res_IDH_best[ind==1, ]
+test = res_IDH_best[ind==2, ]
 ```
 
 ```{r}
-train = res_IDH_best[ind==1, ]
-test = res_IDH_best[ind==2, ]
 dim(train)
-dim(test)
 table(train$group)
+```
+
+```{r}
+dim(test)
 table(test$group)
 ```
+É possível ver a distribuição dos subtipos da variável em questão relativamente ao conjunto de dados de treino e de teste.
+
+### Medidas de erro
+
+```{r}
+pecc = function(obs,pred)
+  
+sum(obs==pred)/length(obs)
+
+```
+
+PECC (Percentage Error Correct Classification) é uma métrica de avaliação de desempenho de classificação que mede a percentagem de instâncias classificadas corretamente em relação ao total de instâncias. 
+
 ## K-Nearest neighbors
 
 ```{r}
-library(class)  #ver
 knn_pred = knn(train[, 2:ncol(train)], test[, 2:ncol(test)], train$group)
-table(knn_pred, test$group)
-pecc(knn_pred, test$group)
 
+confusion_matrix1 = confusionMatrix(knn_pred, test$group)
+confusion_matrix1
+
+F1 = confusion_matrix1$byClass["F1"]
+F1
 ```
+A matriz de confusão obtida revela 2 verdadeiros negativos, 0 falsos negativos, 2 falsos positivos e 34 verdadeiros positivos. Relativamente às métricas de desempenho, vale realçar que a precisão obtida para o modelo foi de aproxidamente 95%, indicando um alto nível de precisão do modelo, onde a maioria das previsões foi correta, a sensibilidade teve o valor de 1, a especicidade foi de 94% e o valor de F1 de 0.67.
+
 ## NaiveBayes
 
-```{r}
-library(e1071)
-model = naiveBayes(group ~ ., train)
-nb_pred = predict(model, test)
-nb_pred
-table(nb_pred, test$group)
-pecc(test$group, nb_pred)
-sum(nb_pred == test$group)/length(test$group)
-```
-## Decision Tree
+A ideia base do algoritmo é calcular as probabilidades associadas à pertença de um exemplo a cada uma das possíveis classes e usar as frequências de co-ocorrência dos valores da classe e dos valores para os atributos de entrada.
 
 ```{r}
-library(party)
+model = naiveBayes(group ~ ., train)
+nb_pred = predict(model, test)
+
+confusion_matrix2 = confusionMatrix(nb_pred, test$group)
+confusion_matrix2
+
+F1 = confusion_matrix2$byClass["F1"]
+F1
+```
+A matriz de confusão obtida revela 2 verdadeiros negativos, 0 falsos negativos, 0 falsos positivos e 36 verdadeiros positivos. Relativamente às métricas de desempenho, vale realçar que a precisão obtida para o modelo foi de aproxidamente 100%, indicando um alto nível de precisão do modelo, onde todas as previsões foram corretas, a sensibilidade teve o valor de 1, a especicidade teve o valor de 1 e o valor de F1 de 1.
+
+## Decision Tree
+
+
+
+```{r}
 IDH_ctree = ctree(group ~., data=train)
-print(IDH_ctree)
 plot(IDH_ctree)
 ```
 
@@ -1363,47 +1279,54 @@ plot(IDH_ctree)
 testPred = predict(IDH_ctree, test)
 testPred[1]
 table(testPred,test$group)
-pecc(test$group, testPred)
+#pecc(test$group, testPred)
+
+#confusion_matrix3 = confusionMatrix(testPred, test$group)
+#confusion_matrix3
 ```
 
 ```{r}
 # NAO FUNCIONA 
-modelo <- lm(train$group ~ ., data = train)
+#modelo <- lm(train$group ~ ., data = train)
 
-previsoes <- predict(modelo, newdata = test)
+#previsoes <- predict(modelo, newdata = test)
 
-RMSE(previsoes, test$group)
+#RMSE(previsoes, test$group)
 
 ```
 
 ```{r}
-library(e1071)   #erros marados
 modelsvm = svm(group ~ ., train)
 svm_pred = predict(modelsvm, test)
-svm_pred
+
 table(svm_pred, test$group)
 sum(svm_pred==test$group)/length(test$group)
 ```
+## RandomForest
 
 ```{r}
-library(randomForest)
-iris.rf = randomForest(group ~ ., data=train, importance=TRUE)
-pred.rf = predict(iris.rf, test)
-pecc(pred.rf, test$group)
-table(pred.rf, test$group)
+model.rf = randomForest(group ~ ., data=train, importance=TRUE)
+pred.rf = predict(model.rf, test)
+
+
+confusion_matrix3 = confusionMatrix(pred.rf, test$group)
+confusion_matrix3
+
+F1 = confusion_matrix3$byClass["F1"]
+F1
+```
+A matriz de confusão obtida revela 2 verdadeiros negativos, 0 falsos negativos, 0 falsos positivos e 36 verdadeiros positivos. Relativamente às métricas de desempenho, vale realçar que a precisão obtida para o modelo foi de aproxidamente 100%, indicando um alto nível de precisão do modelo, onde todas as previsões foram corretas, a sensibilidade teve o valor de 1, a especicidade teve o valor de 1 e o valor de F1 de 1.
+
+
+```{r}
+#nn = nnet(train$group,train[, 2:ncol(train)], size=5)
+
 ```
 
 ```{r}
-library(nnet)
-nn = nnet(train$group,train[, 2:ncol(train)], size=5)
-
-```
-
-```{r}
-library(caret)
-set.seed(16718)
-cv.ctrl = trainControl("cv", number = 5)
-group_nn_cv = train(train$group~., data = res_IDH_best[,2:ncol(res_IDH_best)], method = "nnet", tuneLenght=10, trControl=cv.ctrl, maxit = 100,)
+#set.seed(16718)
+#cv.ctrl = trainControl("cv", number = 5)
+#group_nn_cv = train(train$group~., data = res_IDH_best[,2:ncol(res_IDH_best)], method = "nnet", tuneLenght=10, trControl=cv.ctrl, maxit = 100,)
 ```
 
  
